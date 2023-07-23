@@ -1,5 +1,8 @@
 package plugin.treasurehunt.command;
 
+import java.util.List;
+import java.util.SplittableRandom;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,8 +24,20 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (sender instanceof Player player) {
-      player.sendMessage("コマンドが実行された！しかしゲームはまだ実行できないようだ…");
+
+      Material treasure = getMaterial();
+
+      int point = switch (treasure) {
+        case DIRT -> 10;
+        case SAND -> 15;
+        case OAK_LOG -> 20;
+        default -> 0;
+      };
+
+      player.sendMessage("コマンドが実行された！【" + treasure + "】を探してみよう！");
+      player.sendMessage(treasure + " のボーナススコアは【" + point + "点】！");
     }
+
     return false;
   }
 
@@ -33,5 +48,12 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
       Item item = e.getItem();
       player.sendMessage("おめでとう！ " + item.getName() + " を手に入れた！");
     }
+  }
+
+  private Material getMaterial() {
+    List<Material> materialList = List.of(Material.SAND, Material.DIRT, Material.OAK_LOG);
+
+    int random = new SplittableRandom().nextInt(materialList.size());
+    return materialList.get(random);
   }
 }
