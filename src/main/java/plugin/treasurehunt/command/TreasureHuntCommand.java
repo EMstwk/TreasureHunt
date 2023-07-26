@@ -7,7 +7,6 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,6 +16,8 @@ import plugin.treasurehunt.Main;
 public class TreasureHuntCommand implements Listener, CommandExecutor {
 
   private int gameTime;
+  private Material treasure;
+  private Material foundMaterial;
 
   private final Main main;
 
@@ -29,7 +30,7 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
     if (sender instanceof Player player) {
       gameTime = 20;
 
-      Material treasure = getMaterial();
+      treasure = setTreasureMaterial();
 
       int point = switch (treasure) {
         case DIRT -> 10;
@@ -51,12 +52,15 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
     if (e.getEntity() instanceof Player) {
       Player player = (Player) e.getEntity();
-      Item item = e.getItem();
-      player.sendMessage("おめでとう！ " + item.getName() + " を手に入れた！");
+      foundMaterial = e.getItem().getItemStack().getType();
+
+      if (treasure.equals(foundMaterial)) {
+        player.sendMessage("おめでとう！ " + foundMaterial + " を手に入れた！");
+      }
     }
   }
 
-  private Material getMaterial() {
+  private Material setTreasureMaterial() {
     List<Material> materialList = List.of(Material.SAND, Material.DIRT, Material.OAK_LOG);
 
     int random = new SplittableRandom().nextInt(materialList.size());
@@ -72,7 +76,6 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
       }
       player.sendMessage("残り時間 " + gameTime + " 秒");
       gameTime -= 5;
-
     }, 0, 5 * 20);
   }
 }
