@@ -2,7 +2,6 @@ package plugin.treasurehunt.command;
 
 import java.util.List;
 import java.util.SplittableRandom;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,12 +11,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import plugin.treasurehunt.Main;
+import plugin.treasurehunt.scheduler.GameScheduler;
 
 public class TreasureHuntCommand implements Listener, CommandExecutor {
 
-  private int gameTime;
   private Material treasure;
   private Material foundMaterial;
+  private GameScheduler gameScheduler;
 
   private final Main main;
 
@@ -28,7 +28,6 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (sender instanceof Player player) {
-      gameTime = 20;
 
       treasure = setTreasureMaterial();
 
@@ -42,7 +41,9 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
       player.sendMessage("コマンドが実行された！【" + treasure + "】を探してみよう！");
       player.sendMessage(treasure + " のボーナススコアは【" + point + "点】！");
 
-      gamePlay(player);
+      gameScheduler = new GameScheduler(20);
+      gameScheduler.cancelTask();
+      gameScheduler.runTaskTimer(main, 0, 5 * 20);
     }
 
     return false;
@@ -55,6 +56,7 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
       foundMaterial = e.getItem().getItemStack().getType();
 
       if (treasure.equals(foundMaterial)) {
+        gameScheduler.cancel();
         player.sendMessage("おめでとう！ " + foundMaterial + " を手に入れた！");
       }
     }
@@ -65,17 +67,5 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
 
     int random = new SplittableRandom().nextInt(materialList.size());
     return materialList.get(random);
-  }
-
-  private void gamePlay(Player player) {
-    Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-      if (gameTime <= 0) {
-        Runnable.cancel();
-        player.sendMessage("残念！時間切れです");
-        return;
-      }
-      player.sendMessage("残り時間 " + gameTime + " 秒");
-      gameTime -= 5;
-    }, 0, 5 * 20);
   }
 }
