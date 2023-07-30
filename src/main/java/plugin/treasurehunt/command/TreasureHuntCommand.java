@@ -45,6 +45,7 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
         }
       }
 
+      // ifのネスト解消のため、StreamAPI使えないか検討中
 //      gameSchedulerList.stream().findFirst()
 //          .ifPresent(BukkitRunnable::cancel);
 
