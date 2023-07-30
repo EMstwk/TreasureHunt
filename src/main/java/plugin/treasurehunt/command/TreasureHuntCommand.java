@@ -24,6 +24,7 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
 
   private final Main main;
 
+  public List<Material> playersTreasureList = new ArrayList<>();
   private List<GameScheduler> gameSchedulerList = new ArrayList<>();
 
   public TreasureHuntCommand(Main main) {
@@ -43,8 +44,14 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
           existingGameScheduler.cancel();
         }
       }
+
+      // ifのネスト解消のため、StreamAPI使えないか検討中
+//      gameSchedulerList.stream().findFirst()
+//          .ifPresent(BukkitRunnable::cancel);
+
       gameScheduler = new GameScheduler(main);
       gameScheduler.startTask();
+      playersTreasureList.add(treasure);
       gameSchedulerList.add(gameScheduler);
     }
     return false;
@@ -52,19 +59,20 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
 
   @EventHandler
   public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
-    if (e.getEntity() instanceof Player) {
-      Player player = (Player) e.getEntity();
-      foundMaterial = e.getItem().getItemStack().getType();
+    if (!(e.getEntity() instanceof Player)) {
+      return;
+    }
 
-      if (treasure.equals(foundMaterial)) {
-        gameScheduler.cancel();
-        player.sendMessage("おめでとう！ " + foundMaterial + " を入手しました！");
-        player.sendMessage(
-            player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！");
+    Player player = (Player) e.getEntity();
+    foundMaterial = e.getItem().getItemStack().getType();
 
-        // Task終了後でもイベント発生する度に処理されるのを防ぎたい。けどnullはエラー出るから対処法要検討。
-        treasure = null;
-      }
+    if (!playersTreasureList.isEmpty() && treasure.equals(foundMaterial)) {
+      gameScheduler.cancel();
+      player.sendMessage("おめでとう！ " + foundMaterial + " を入手しました！");
+      player.sendMessage(
+          player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！");
+
+      playersTreasureList.clear();
     }
   }
 
@@ -101,13 +109,16 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
    * @return ゲームスコア
    */
   private int getGameScore() {
-    gameScore = 30;
-    if (gameScheduler.getGameTime() <= 15 && gameScheduler.getGameTime() > 10) {
-      gameScore -= 10;
-    } else if (gameScheduler.getGameTime() > 5) {
-      gameScore -= 15;
-    } else if (gameScheduler.getGameTime() > 0) {
-      gameScore -= 20;
+    int remainingTime = gameScheduler.getGameTime();
+
+    if (remainingTime > 15) {
+      gameScore = 20;
+    } else if (remainingTime > 10) {
+      gameScore = 15;
+    } else if (remainingTime > 5) {
+      gameScore = 10;
+    } else if (remainingTime > 0) {
+      gameScore = 5;
     }
     return gameScore;
   }

@@ -24,7 +24,7 @@ public class GameScheduler extends BukkitRunnable {
       cancel();
       Bukkit.broadcastMessage("時間切れです");
       return;
-    } else if (gameTime <= 10) {
+    } else if (gameTime == 20 || gameTime == 15 || gameTime <= 10) {
       Bukkit.broadcastMessage("残り" + gameTime + "秒");
     }
     gameTime -= 1;
@@ -33,5 +33,9 @@ public class GameScheduler extends BukkitRunnable {
   public void startTask() {
     setGameTime(gameTime);
     runTaskTimer(main, 0, 20);
+  }
+
+  public void cancelTask() {
+    cancel();
   }
 }
