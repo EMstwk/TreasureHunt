@@ -1,16 +1,21 @@
 package plugin.treasurehunt.scheduler;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
+import plugin.treasurehunt.Main;
 
+@Getter
+@Setter
 public class GameScheduler extends BukkitRunnable {
 
-  private int gameTime;
-  private BukkitTask task;
+  private int gameTime = 20;
 
-  public GameScheduler(int initialGameTime) {
-    this.gameTime = initialGameTime;
+  private static Main main;
+
+  public GameScheduler(Main main) {
+    this.main = main;
   }
 
   @Override
@@ -19,14 +24,18 @@ public class GameScheduler extends BukkitRunnable {
       cancel();
       Bukkit.broadcastMessage("時間切れです");
       return;
+    } else if (gameTime == 20 || gameTime == 15 || gameTime <= 10) {
+      Bukkit.broadcastMessage("残り" + gameTime + "秒");
     }
-    Bukkit.broadcastMessage("残り" + gameTime + "秒");
-    gameTime -= 5;
+    gameTime -= 1;
+  }
+
+  public void startTask() {
+    setGameTime(gameTime);
+    runTaskTimer(main, 0, 20);
   }
 
   public void cancelTask() {
-    if (task != null) {
-      task.cancel();
-    }
+    cancel();
   }
 }
