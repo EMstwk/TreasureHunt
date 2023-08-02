@@ -2,6 +2,8 @@ package plugin.treasurehunt.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.SplittableRandom;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -12,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import plugin.treasurehunt.Main;
+import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 public class TreasureHuntCommand implements Listener, CommandExecutor {
@@ -21,11 +24,12 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   private int gameScore;
   private int bonusScore;
   private GameScheduler gameScheduler;
+  private ExecutingPlayer executingPlayer;
+  public Optional<ExecutingPlayer> nowExecutingPlayer;
 
   private final Main main;
 
-  public List<Material> playersTreasureList = new ArrayList<>();
-  private List<GameScheduler> gameSchedulerList = new ArrayList<>();
+  public List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
 
   public TreasureHuntCommand(Main main) {
     this.main = main;
@@ -34,25 +38,40 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (sender instanceof Player player) {
-      treasure = setTreasureMaterial();
-      player.sendMessage("宝探しスタート！【" + treasure + "】を探しましょう！");
-      player.sendMessage(treasure + " のボーナススコアは【" + getBonusScore() + "点】です！");
 
-      // gameSchedulerList内で実行中の処理があればキャンセルすることで、カウントが二重になるのを防ぎます。
-      if (!gameSchedulerList.isEmpty()) {
-        for (GameScheduler existingGameScheduler : gameSchedulerList) {
-          existingGameScheduler.cancel();
-        }
+      executingPlayer = new ExecutingPlayer(player.getName());
+
+      // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
+      // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
+      if (executingPlayerList.isEmpty()) {
+        executingPlayer = addNewPlayer(player);
+      } else {
+        executingPlayer = executingPlayerList.stream()
+            .findFirst()
+            .map(p -> p.getPlayerName().equals(player.getName())
+                ? p
+                : addNewPlayer(player)).orElse(executingPlayer);
       }
 
-      // ifのネスト解消のため、StreamAPI使えないか検討中
-//      gameSchedulerList.stream().findFirst()
-//          .ifPresent(BukkitRunnable::cancel);
+      // コマンド実行者が実行中のスケジューラがあればキャンセル
+      if (!Objects.isNull(executingPlayer.getGameScheduler())) {
+        executingPlayerList.stream()
+            .filter(p -> p.getPlayerName().equals(player.getName()))
+            .findFirst()
+            .ifPresent(p -> p.getGameScheduler().cancel());
+      }
 
+      // treasureを指定し、プレイヤー情報とリストに追加
+      treasure = setTreasureMaterial();
+      executingPlayer.setTreasure(treasure);
+
+      // スケジューラを作成し、プレイヤー情報とリストに追加
       gameScheduler = new GameScheduler(main);
+      executingPlayer.setGameScheduler(gameScheduler);
+
       gameScheduler.startTask();
-      playersTreasureList.add(treasure);
-      gameSchedulerList.add(gameScheduler);
+      player.sendMessage("宝探しスタート！【" + treasure + "】を探しましょう！");
+      player.sendMessage(treasure + " のボーナススコアは【" + getBonusScore() + "点】です！");
     }
     return false;
   }
@@ -66,14 +85,31 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
     Player player = (Player) e.getEntity();
     foundMaterial = e.getItem().getItemStack().getType();
 
-    if (!playersTreasureList.isEmpty() && treasure.equals(foundMaterial)) {
-      gameScheduler.cancel();
-      player.sendMessage("おめでとう！ " + foundMaterial + " を入手しました！");
-      player.sendMessage(
-          player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！");
+    nowExecutingPlayer = executingPlayerList.stream()
+        .filter(p -> p.getPlayerName().equals(player.getName()))
+        .findFirst();
 
-      playersTreasureList.clear();
-    }
+    nowExecutingPlayer.ifPresent(executingPlayer -> {
+      if (executingPlayer.getTreasure().equals(foundMaterial)) {
+        executingPlayer.getGameScheduler().cancel();
+        player.sendMessage("おめでとう！ " + foundMaterial + " を入手しました！");
+        player.sendMessage(
+            player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！");
+        executingPlayerList.remove(executingPlayer);
+      }
+    });
+
+    removeNowExecutingPlayer(nowExecutingPlayer);
+  }
+
+  public void removeNowExecutingPlayer(Optional<ExecutingPlayer> nowExecutingPlayer) {
+    nowExecutingPlayer.ifPresent(executingPlayer -> executingPlayerList.remove(executingPlayer));
+  }
+
+  private ExecutingPlayer addNewPlayer(Player player) {
+    ExecutingPlayer newPlayer = new ExecutingPlayer(player.getName());
+    executingPlayerList.add(newPlayer);
+    return newPlayer;
   }
 
   /**
@@ -95,8 +131,7 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
    */
   private int getBonusScore() {
     bonusScore = switch (treasure) {
-      case DIRT -> 10;
-      case SAND -> 15;
+      case SAND -> 10;
       case OAK_LOG -> 20;
       default -> 0;
     };
