@@ -90,18 +90,18 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
         .findFirst();
 
     nowExecutingPlayer.ifPresent(executingPlayer -> {
-      if (executingPlayer.getTreasure().equals(foundMaterial)) {
+      if (executingPlayer.getTreasure().equals(foundMaterial) && !executingPlayer.getGameScheduler()
+          .isCancelled()) {
         executingPlayer.getGameScheduler().cancel();
-        player.sendMessage("おめでとう！ " + foundMaterial + " を入手しました！");
-        player.sendMessage(
-            player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！");
+        player.sendTitle(foundMaterial + " を発見！",
+            player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！", 0, 60, 10);
+        player.sendMessage("宝探しゲームを終了しました");
         executingPlayerList.remove(executingPlayer);
       }
     });
-
-    removeNowExecutingPlayer(nowExecutingPlayer);
   }
 
+  // gameSchedulerクラスで使えないか検討中
   public void removeNowExecutingPlayer(Optional<ExecutingPlayer> nowExecutingPlayer) {
     nowExecutingPlayer.ifPresent(executingPlayer -> executingPlayerList.remove(executingPlayer));
   }

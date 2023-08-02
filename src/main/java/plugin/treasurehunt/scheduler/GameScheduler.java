@@ -24,7 +24,6 @@ public class GameScheduler extends BukkitRunnable {
   public void run() {
     if (gameTime <= 0) {
       cancel();
-      // command.removeNowExecutingPlayer(command.nowExecutingPlayer);
       Bukkit.broadcastMessage("残念！時間切れです");
       return;
     } else if (gameTime % 5 == 0 || gameTime <= 10) {
