@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.SplittableRandom;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,7 +16,7 @@ import plugin.treasurehunt.Main;
 import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
-public class TreasureHuntCommand implements Listener, CommandExecutor {
+public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   private Material treasure;
   private Material foundMaterial;
@@ -36,43 +35,49 @@ public class TreasureHuntCommand implements Listener, CommandExecutor {
   }
 
   @Override
-  public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-    if (sender instanceof Player player) {
+  public boolean onExecutePlayerCommand(Player player, Command command, String label,
+      String[] args) {
 
-      executingPlayer = new ExecutingPlayer(player.getName());
+    executingPlayer = new ExecutingPlayer(player.getName());
 
-      // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
-      // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
-      if (executingPlayerList.isEmpty()) {
-        executingPlayer = addNewPlayer(player);
-      } else {
-        executingPlayer = executingPlayerList.stream()
-            .findFirst()
-            .map(p -> p.getPlayerName().equals(player.getName())
-                ? p
-                : addNewPlayer(player)).orElse(executingPlayer);
-      }
-
-      // コマンド実行者が実行中のスケジューラがあればキャンセル
-      if (!Objects.isNull(executingPlayer.getGameScheduler())) {
-        executingPlayerList.stream()
-            .filter(p -> p.getPlayerName().equals(player.getName()))
-            .findFirst()
-            .ifPresent(p -> p.getGameScheduler().cancel());
-      }
-
-      // treasureを指定し、プレイヤー情報とリストに追加
-      treasure = setTreasureMaterial();
-      executingPlayer.setTreasure(treasure);
-
-      // スケジューラを作成し、プレイヤー情報とリストに追加
-      gameScheduler = new GameScheduler(main);
-      executingPlayer.setGameScheduler(gameScheduler);
-
-      gameScheduler.startTask();
-      player.sendMessage("宝探しスタート！【" + treasure + "】を探しましょう！");
-      player.sendMessage(treasure + " のボーナススコアは【" + getBonusScore() + "点】です！");
+    // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
+    // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
+    if (executingPlayerList.isEmpty()) {
+      executingPlayer = addNewPlayer(player);
+    } else {
+      executingPlayer = executingPlayerList.stream()
+          .findFirst()
+          .map(p -> p.getPlayerName().equals(player.getName())
+              ? p
+              : addNewPlayer(player)).orElse(executingPlayer);
     }
+
+    // コマンド実行者が実行中のスケジューラがあればキャンセル
+    if (!Objects.isNull(executingPlayer.getGameScheduler())) {
+      executingPlayerList.stream()
+          .filter(p -> p.getPlayerName().equals(player.getName()))
+          .findFirst()
+          .ifPresent(p -> p.getGameScheduler().cancel());
+    }
+
+    // treasureを指定し、プレイヤー情報とリストに追加
+    treasure = setTreasureMaterial();
+    executingPlayer.setTreasure(treasure);
+
+    // スケジューラを作成し、プレイヤー情報とリストに追加
+    gameScheduler = new GameScheduler(main);
+    executingPlayer.setGameScheduler(gameScheduler);
+
+    gameScheduler.startTask();
+    player.sendMessage("宝探しスタート！【" + treasure + "】を探しましょう！");
+    player.sendMessage(treasure + " のボーナススコアは【" + getBonusScore() + "点】です！");
+
+    return true;
+  }
+
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
+      String[] args) {
     return false;
   }
 
