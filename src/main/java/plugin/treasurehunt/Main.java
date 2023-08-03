@@ -10,6 +10,6 @@ public final class Main extends JavaPlugin {
   public void onEnable() {
     TreasureHuntCommand treasureHuntCommand = new TreasureHuntCommand(this);
     Bukkit.getPluginManager().registerEvents(treasureHuntCommand, this);
-    getCommand("huntstart").setExecutor(treasureHuntCommand);
+    getCommand("treasurehunt").setExecutor(treasureHuntCommand);
   }
 }

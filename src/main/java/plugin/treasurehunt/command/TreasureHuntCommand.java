@@ -30,8 +30,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   private int gameScore;
   private int bonusScore;
   private GameScheduler gameScheduler;
-  private ExecutingPlayer executingPlayer;
-  public Optional<ExecutingPlayer> nowExecutingPlayer;
 
   private final Main main;
 
@@ -56,7 +54,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       return false;
     }
 
-    executingPlayer = new ExecutingPlayer(player.getName());
+    ExecutingPlayer executingPlayer = new ExecutingPlayer(player.getName());
 
     // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
     // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
@@ -71,6 +69,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
 
     // コマンド実行者が実行中のスケジューラがあればキャンセル
+    // 同時に2人のプレイヤーが実行したときに正しく処理できてるか微妙？
     if (!Objects.isNull(executingPlayer.getGameScheduler())) {
       executingPlayerList.stream()
           .filter(p -> p.getPlayerName().equals(player.getName()))
@@ -87,8 +86,10 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     executingPlayer.setGameScheduler(gameScheduler);
 
     gameScheduler.startTask();
-    player.sendMessage("宝探しスタート！【" + treasure + "】を探しましょう！");
-    player.sendMessage(treasure + " のボーナススコアは【" + getBonusScore() + "点】です！");
+    player.sendMessage("宝探しスタート！【" + executingPlayer.getTreasure() + "】を探しましょう！");
+    player.sendMessage(
+        executingPlayer.getTreasure() + " のボーナススコアは【" + getBonusScore(executingPlayer.getTreasure())
+            + "点】です！");
 
     return true;
   }
@@ -108,7 +109,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     Player player = (Player) e.getEntity();
     foundMaterial = e.getItem().getItemStack().getType();
 
-    nowExecutingPlayer = executingPlayerList.stream()
+    Optional<ExecutingPlayer> nowExecutingPlayer = executingPlayerList.stream()
         .filter(p -> p.getPlayerName().equals(player.getName()))
         .findFirst();
 
@@ -117,16 +118,12 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           .isCancelled()) {
         executingPlayer.getGameScheduler().cancel();
         player.sendTitle(foundMaterial + " を発見！",
-            player.getName() + "の合計スコアは【" + getTotalScore() + "点】です！", 0, 60, 10);
+            player.getName() + "の合計スコアは【" + getTotalScore(nowExecutingPlayer.get().getTreasure(),
+                nowExecutingPlayer.get().getGameScheduler()) + "点】です！", 0, 60, 10);
         player.sendMessage("宝探しゲームを終了しました");
         executingPlayerList.remove(executingPlayer);
       }
     });
-  }
-
-  // gameSchedulerクラスで使えないか検討中
-  public void removeNowExecutingPlayer(Optional<ExecutingPlayer> nowExecutingPlayer) {
-    nowExecutingPlayer.ifPresent(executingPlayer -> executingPlayerList.remove(executingPlayer));
   }
 
   private ExecutingPlayer addNewPlayer(Player player) {
@@ -173,7 +170,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return ボーナススコア
    */
-  private int getBonusScore() {
+  private int getBonusScore(Material treasure) {
     bonusScore = switch (treasure) {
       case SAND -> 10;
       case OAK_LOG -> 20;
@@ -187,7 +184,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return ゲームスコア
    */
-  private int getGameScore() {
+  private int getGameScore(GameScheduler gameScheduler) {
     int remainingTime = gameScheduler.getGameTime();
 
     if (remainingTime > 15) {
@@ -207,7 +204,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return 合計スコア
    */
-  private int getTotalScore() {
-    return getBonusScore() + getGameScore();
+  private int getTotalScore(Material treasure, GameScheduler gameScheduler) {
+    return getBonusScore(treasure) + getGameScore(gameScheduler);
   }
 }
