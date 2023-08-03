@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -17,6 +18,12 @@ import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 public class TreasureHuntCommand extends BaseCommand implements Listener {
+
+  public static final String EASY = "easy";
+  public static final String NORMAL = "normal";
+  public static final String HARD = "hard";
+  public static final String NONE = "none";
+  public static final String LIST = "list";
 
   private Material treasure;
   private Material foundMaterial;
@@ -37,6 +44,17 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecutePlayerCommand(Player player, Command command, String label,
       String[] args) {
+    // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
+    if (args.length == 1 && LIST.equals(args[0])) {
+      // sendPlayerScoreList(player);
+      player.sendMessage("リストはまだ準備中です");
+      return false;
+    }
+
+    String difficulty = getDifficulty(player, args);
+    if (difficulty.equals(NONE)) {
+      return false;
+    }
 
     executingPlayer = new ExecutingPlayer(player.getName());
 
@@ -61,7 +79,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
 
     // treasureを指定し、プレイヤー情報とリストに追加
-    treasure = setTreasureMaterial();
+    treasure = setTreasureMaterial(difficulty);
     executingPlayer.setTreasure(treasure);
 
     // スケジューラを作成し、プレイヤー情報とリストに追加
@@ -122,11 +140,32 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return ゲームで探すMaterial
    */
-  private Material setTreasureMaterial() {
-    List<Material> materialList = List.of(Material.SAND, Material.DIRT, Material.OAK_LOG);
+  private Material setTreasureMaterial(String difficulty) {
+    List<Material> materialList = switch (difficulty) {
+      case NORMAL -> List.of(Material.DIRT, Material.SAND);
+      case HARD -> List.of(Material.DIRT, Material.SAND, Material.OAK_LOG);
+      default -> List.of(Material.DIRT);
+    };
 
     int random = new SplittableRandom().nextInt(materialList.size());
     return materialList.get(random);
+  }
+
+  /**
+   * 難易度をコマンド引数から取得します。
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @param args   コマンド引数
+   * @return 難易度
+   */
+  private String getDifficulty(Player player, String args[]) {
+    if (args.length == 1 && (EASY.equals(args[0]) || NORMAL.equals(args[0]) || HARD.equals(
+        args[0]))) {
+      return args[0];
+    }
+    player.sendMessage(
+        ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度指定が必要です。[easy, normal, hard]");
+    return NONE;
   }
 
   /**
