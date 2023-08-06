@@ -1,5 +1,12 @@
 package plugin.treasurehunt.command;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -44,8 +51,31 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       String[] args) {
     // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
     if (args.length == 1 && LIST.equals(args[0])) {
+
       // sendPlayerScoreList(player);
-      player.sendMessage("リストはまだ準備中です");
+      try (Connection con = DriverManager.getConnection(
+          "jdbc:mysql://localhost:3306/TREASUREHUNT_RESULTS",
+          "root",
+          "rootroot");
+          Statement st = con.createStatement();
+          ResultSet resultset = st.executeQuery("select * from player_score")) {
+        while (resultset.next()) {
+          int id = resultset.getInt("id");
+          String name = resultset.getString("player_name");
+          int score = resultset.getInt("score");
+          String difficulty = resultset.getString("difficulty");
+          String treasure = resultset.getString("treasure");
+
+          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+          LocalDateTime date = LocalDateTime.parse(resultset.getString("registered_at"),
+              formatter);
+          player.sendMessage(
+              id + " | " + name + " | " + score + " | " + difficulty + " | " + treasure + " | "
+                  + date.format(formatter));
+        }
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
       return false;
     }
 
@@ -54,23 +84,23 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       return false;
     }
 
-    ExecutingPlayer executingPlayer = new ExecutingPlayer(player.getName());
+    ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
 
     // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
     // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
     if (executingPlayerList.isEmpty()) {
-      executingPlayer = addNewPlayer(player);
+      nowExecutingPlayer = addNewPlayer(player);
     } else {
-      executingPlayer = executingPlayerList.stream()
+      nowExecutingPlayer = executingPlayerList.stream()
           .findFirst()
           .map(p -> p.getPlayerName().equals(player.getName())
               ? p
-              : addNewPlayer(player)).orElse(executingPlayer);
+              : addNewPlayer(player)).orElse(nowExecutingPlayer);
     }
 
     // コマンド実行者が実行中のスケジューラがあればキャンセル
     // 同時に2人のプレイヤーが実行したときに正しく処理できてるか微妙？
-    if (!Objects.isNull(executingPlayer.getGameScheduler())) {
+    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
       executingPlayerList.stream()
           .filter(p -> p.getPlayerName().equals(player.getName()))
           .findFirst()
@@ -79,16 +109,18 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
 
     // treasureを指定し、プレイヤー情報とリストに追加
     treasure = setTreasureMaterial(difficulty);
-    executingPlayer.setTreasure(treasure);
+    nowExecutingPlayer.setDifficulty(difficulty);
+    nowExecutingPlayer.setTreasure(treasure);
 
     // スケジューラを作成し、プレイヤー情報とリストに追加
     gameScheduler = new GameScheduler(main);
-    executingPlayer.setGameScheduler(gameScheduler);
+    nowExecutingPlayer.setGameScheduler(gameScheduler);
 
     gameScheduler.startTask();
-    player.sendMessage("宝探しスタート！【" + executingPlayer.getTreasure() + "】を探しましょう！");
+    player.sendMessage("宝探しスタート！【" + nowExecutingPlayer.getTreasure() + "】を探しましょう！");
     player.sendMessage(
-        executingPlayer.getTreasure() + " のボーナススコアは【" + getBonusScore(executingPlayer.getTreasure())
+        nowExecutingPlayer.getTreasure() + " のボーナススコアは【" + getBonusScore(
+            nowExecutingPlayer.getTreasure())
             + "点】です！");
 
     return true;
@@ -117,10 +149,31 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       if (executingPlayer.getTreasure().equals(foundMaterial) && !executingPlayer.getGameScheduler()
           .isCancelled()) {
         executingPlayer.getGameScheduler().cancel();
+
+        int totalScore = getTotalScore(executingPlayer.getTreasure(),
+            executingPlayer.getGameScheduler());
+        executingPlayer.setScore(totalScore);
+
         player.sendTitle(foundMaterial + " を発見！",
-            player.getName() + "の合計スコアは【" + getTotalScore(nowExecutingPlayer.get().getTreasure(),
-                nowExecutingPlayer.get().getGameScheduler()) + "点】です！", 0, 60, 10);
+            player.getName() + "の合計スコアは【" + totalScore + "点】です！", 0, 60, 10);
         player.sendMessage("宝探しゲームを終了しました");
+
+        //DB
+        try (Connection con = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/TREASUREHUNT_RESULTS",
+            "root",
+            "rootroot");
+            Statement st = con.createStatement()) {
+          st.executeUpdate(
+              "insert player_score(player_name, score, difficulty, treasure, registered_at)"
+                  + "values('" + executingPlayer.getPlayerName() + "', "
+                  + executingPlayer.getScore() + ", '"
+                  + executingPlayer.getDifficulty() + "', '"
+                  + executingPlayer.getTreasure() + "', now());");
+        } catch (SQLException ex) {
+          ex.printStackTrace();
+        }
+
         executingPlayerList.remove(executingPlayer);
       }
     });
