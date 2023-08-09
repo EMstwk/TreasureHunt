@@ -1,12 +1,6 @@
 package plugin.treasurehunt.command;
 
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
 import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.ChatColor;
@@ -26,6 +21,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.data.ExecutingPlayer;
+import plugin.treasurehunt.mapper.data.PlayerScore;
+import plugin.treasurehunt.mapper.data.PlayerScoreMapper;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 public class TreasureHuntCommand extends BaseCommand implements Listener {
@@ -65,29 +62,19 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
     if (args.length == 1 && LIST.equals(args[0])) {
 
-      // DB
-      try (Connection con = DriverManager.getConnection(
-          "jdbc:mysql://localhost:3306/TREASUREHUNT_RESULTS",
-          "root",
-          "rootroot");
-          Statement st = con.createStatement();
-          ResultSet resultset = st.executeQuery("select * from player_score")) {
-        while (resultset.next()) {
-          int id = resultset.getInt("id");
-          String name = resultset.getString("player_name");
-          int score = resultset.getInt("score");
-          String difficulty = resultset.getString("difficulty");
-          String treasure = resultset.getString("treasure");
+      try (SqlSession session = sqlSessionFactory.openSession()) {
+        PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
+        List<PlayerScore> playerScoreList = mapper.selectList();
 
-          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-          LocalDateTime date = LocalDateTime.parse(resultset.getString("registered_at"),
-              formatter);
-          player.sendMessage(
-              id + " | " + name + " | " + score + " | " + difficulty + " | " + treasure + " | "
-                  + date.format(formatter));
+        for (PlayerScore playerScore : playerScoreList) {
+          player.sendMessage(playerScore.getId() + " | "
+              + playerScore.getPlayerName() + " | "
+              + playerScore.getScore() + " | "
+              + playerScore.getDifficulty() + " | "
+              + playerScore.getTreasure() + " | "
+              + playerScore.getRegisteredAt()
+              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
-      } catch (SQLException e) {
-        e.printStackTrace();
       }
       return false;
     }
@@ -171,20 +158,14 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
             player.getName() + "の合計スコアは【" + totalScore + "点】です！", 0, 60, 10);
         player.sendMessage("宝探しゲームを終了しました");
 
-        //DB
-        try (Connection con = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/TREASUREHUNT_RESULTS",
-            "root",
-            "rootroot");
-            Statement st = con.createStatement()) {
-          st.executeUpdate(
-              "insert player_score(player_name, score, difficulty, treasure, registered_at)"
-                  + "values('" + executingPlayer.getPlayerName() + "', "
-                  + executingPlayer.getScore() + ", '"
-                  + executingPlayer.getDifficulty() + "', '"
-                  + executingPlayer.getTreasure() + "', now());");
-        } catch (SQLException ex) {
-          ex.printStackTrace();
+        // スコア登録処理
+        try (SqlSession session = sqlSessionFactory.openSession(true)) {
+          PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
+          mapper.insert(
+              new PlayerScore(executingPlayer.getPlayerName(),
+                  executingPlayer.getScore(),
+                  executingPlayer.getDifficulty(),
+                  executingPlayer.getTreasure()));
         }
 
         executingPlayerList.remove(executingPlayer);
