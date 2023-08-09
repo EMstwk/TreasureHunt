@@ -1,5 +1,6 @@
 package plugin.treasurehunt.command;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,6 +13,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
+import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -42,8 +46,17 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   public List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
 
+  private SqlSessionFactory sqlSessionFactory;
+
   public TreasureHuntCommand(Main main) {
     this.main = main;
+
+    try {
+      InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
+      this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -52,7 +65,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
     if (args.length == 1 && LIST.equals(args[0])) {
 
-      // sendPlayerScoreList(player);
+      // DB
       try (Connection con = DriverManager.getConnection(
           "jdbc:mysql://localhost:3306/TREASUREHUNT_RESULTS",
           "root",
