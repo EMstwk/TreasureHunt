@@ -5,6 +5,9 @@ import lombok.Setter;
 import org.bukkit.Material;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
+/**
+ * TreasureHuntのゲームを実行する際のプレイヤー情報を扱うオブジェクト。
+ */
 @Getter
 @Setter
 public class ExecutingPlayer {

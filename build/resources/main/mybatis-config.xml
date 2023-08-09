@@ -18,6 +18,6 @@
     </environment>
   </environments>
   <mappers>
-    <mapper class="plugin.treasurehunt.mapper.PlayerScoreMapper"/>
+    <mapper class="plugin.treasurehunt.mapper.data.PlayerScoreMapper"/>
   </mappers>
 </configuration>
