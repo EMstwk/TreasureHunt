@@ -1,16 +1,11 @@
 package plugin.treasurehunt.command;
 
-import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
-import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -20,9 +15,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import plugin.treasurehunt.Main;
+import plugin.treasurehunt.PlayerScoreDao;
 import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.mapper.data.PlayerScore;
-import plugin.treasurehunt.mapper.data.PlayerScoreMapper;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 public class TreasureHuntCommand extends BaseCommand implements Listener {
@@ -40,20 +35,12 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   private GameScheduler gameScheduler;
 
   private final Main main;
+  private PlayerScoreDao playerScoreDao = new PlayerScoreDao();
 
   public List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
 
-  private SqlSessionFactory sqlSessionFactory;
-
   public TreasureHuntCommand(Main main) {
     this.main = main;
-
-    try {
-      InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
-      this.sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Override
@@ -61,21 +48,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       String[] args) {
     // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
     if (args.length == 1 && LIST.equals(args[0])) {
-
-      try (SqlSession session = sqlSessionFactory.openSession()) {
-        PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-        List<PlayerScore> playerScoreList = mapper.selectList();
-
-        for (PlayerScore playerScore : playerScoreList) {
-          player.sendMessage(playerScore.getId() + " | "
-              + playerScore.getPlayerName() + " | "
-              + playerScore.getScore() + " | "
-              + playerScore.getDifficulty() + " | "
-              + playerScore.getTreasure() + " | "
-              + playerScore.getRegisteredAt()
-              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        }
-      }
+      sendPlayerScoreList(player);
       return false;
     }
 
@@ -132,6 +105,24 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     return false;
   }
 
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   *
+   * @param player プレイヤー
+   */
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreDao.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(playerScore.getId() + " | "
+          + playerScore.getPlayerName() + " | "
+          + playerScore.getScore() + " | "
+          + playerScore.getDifficulty() + " | "
+          + playerScore.getTreasure() + " | "
+          + playerScore.getRegisteredAt()
+          .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
+  }
+
   @EventHandler
   public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
     if (!(e.getEntity() instanceof Player)) {
@@ -159,17 +150,14 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         player.sendMessage("宝探しゲームを終了しました");
 
         // スコア登録処理
-        try (SqlSession session = sqlSessionFactory.openSession(true)) {
-          PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-          mapper.insert(
-              new PlayerScore(executingPlayer.getPlayerName(),
-                  executingPlayer.getScore(),
-                  executingPlayer.getDifficulty(),
-                  executingPlayer.getTreasure()));
-        }
-
-        executingPlayerList.remove(executingPlayer);
+        playerScoreDao.insert(
+            new PlayerScore(executingPlayer.getPlayerName(),
+                executingPlayer.getScore(),
+                executingPlayer.getDifficulty(),
+                executingPlayer.getTreasure()));
       }
+
+      executingPlayerList.remove(executingPlayer);
     });
   }
 
