@@ -20,6 +20,11 @@ import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.mapper.data.PlayerScore;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
+/**
+ * 制限時間内にランダムで指定されるブロックを入手し、スコアを獲得するゲームを起動するコマンドです。 スコアはブロックの種類、入手までにかかった時間によって変動します。
+ * 結果はプレイヤー名、点数、日時などで保存されます。
+ */
+
 public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   public static final String EASY = "easy";
@@ -46,7 +51,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecutePlayerCommand(Player player, Command command, String label,
       String[] args) {
-    // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する。
+    // 最初の引数が「list」の場合、スコアを一覧表示して処理を終了します。
     if (args.length == 1 && LIST.equals(args[0])) {
       sendPlayerScoreList(player);
       return false;
@@ -57,6 +62,63 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       return false;
     }
 
+    ExecutingPlayer nowExecutingPlayer = getExecutingPlayer(player);
+
+    startGame(player, difficulty, nowExecutingPlayer);
+
+    return true;
+  }
+
+  /**
+   * ゲームを開始します。入手すべきブロックを指定し、スケジューラを実行します。 コマンドを実行したプレイヤーが既に実行中のスケジューラがあれば、重複しないよう既存のものをキャンセルします。
+   *
+   * @param player             コマンドを実行したプレイヤー
+   * @param difficulty         難易度
+   * @param nowExecutingPlayer 現在実行中のプレイヤー情報
+   */
+  private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
+    // コマンド実行者が実行中のスケジューラがあればキャンセルします。
+    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
+      executingPlayerList.stream()
+          .filter(p -> p.getPlayerName().equals(player.getName()))
+          .findFirst()
+          .ifPresent(p -> {
+            p.getGameScheduler().cancel();
+            p.getGameScheduler().getBossBar().removeAll();
+          });
+    }
+
+    treasure = setTreasureMaterial(difficulty);
+    nowExecutingPlayer.setDifficulty(difficulty);
+    nowExecutingPlayer.setTreasure(treasure);
+
+    gameScheduler = new GameScheduler(main, player);
+    nowExecutingPlayer.setGameScheduler(gameScheduler);
+
+    gameScheduler.startTask();
+
+    // sendTitle調整中
+    player.sendTitle("【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
+            + ChatColor.RESET + "】を探そう！",
+        nowExecutingPlayer.getTreasure() + "のボーナススコアは【"
+            + ChatColor.AQUA + getBonusScore(nowExecutingPlayer.getTreasure())
+            + ChatColor.RESET + "点】です！",
+        0, 60, 10);
+
+    // ↑のtitleと要調整
+    player.sendMessage("宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
+        + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(
+        nowExecutingPlayer.getTreasure())
+        + ChatColor.RESET + ")】を探しましょう！");
+  }
+
+  /**
+   * 現在実行しているプレイヤーのスコア情報を取得する。
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @return 現在実行しているプレイヤーのスコア情報
+   */
+  private ExecutingPlayer getExecutingPlayer(Player player) {
     ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
 
     // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
@@ -70,33 +132,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
               ? p
               : addNewPlayer(player)).orElse(nowExecutingPlayer);
     }
-
-    // コマンド実行者が実行中のスケジューラがあればキャンセル
-    // 同時に2人のプレイヤーが実行したときに正しく処理できてるか微妙？
-    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
-      executingPlayerList.stream()
-          .filter(p -> p.getPlayerName().equals(player.getName()))
-          .findFirst()
-          .ifPresent(p -> p.getGameScheduler().cancel());
-    }
-
-    // treasureを指定し、プレイヤー情報とリストに追加
-    treasure = setTreasureMaterial(difficulty);
-    nowExecutingPlayer.setDifficulty(difficulty);
-    nowExecutingPlayer.setTreasure(treasure);
-
-    // スケジューラを作成し、プレイヤー情報とリストに追加
-    gameScheduler = new GameScheduler(main);
-    nowExecutingPlayer.setGameScheduler(gameScheduler);
-
-    gameScheduler.startTask();
-    player.sendMessage("宝探しスタート！【" + nowExecutingPlayer.getTreasure() + "】を探しましょう！");
-    player.sendMessage(
-        nowExecutingPlayer.getTreasure() + " のボーナススコアは【" + getBonusScore(
-            nowExecutingPlayer.getTreasure())
-            + "点】です！");
-
-    return true;
+    return nowExecutingPlayer;
   }
 
   @Override
@@ -140,13 +176,15 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       if (executingPlayer.getTreasure().equals(foundMaterial) && !executingPlayer.getGameScheduler()
           .isCancelled()) {
         executingPlayer.getGameScheduler().cancel();
+        executingPlayer.getGameScheduler().getBossBar().removeAll();
 
         int totalScore = getTotalScore(executingPlayer.getTreasure(),
             executingPlayer.getGameScheduler());
         executingPlayer.setScore(totalScore);
 
         player.sendTitle(foundMaterial + " を発見！",
-            player.getName() + "の合計スコアは【" + totalScore + "点】です！", 0, 60, 10);
+            player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore + ChatColor.RESET
+                + "点】です！", 0, 60, 10);
         player.sendMessage("宝探しゲームを終了しました");
 
         // スコア登録処理
@@ -156,7 +194,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
                 executingPlayer.getDifficulty(),
                 executingPlayer.getTreasure()));
       }
-
       executingPlayerList.remove(executingPlayer);
     });
   }
@@ -174,9 +211,10 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    */
   private Material setTreasureMaterial(String difficulty) {
     List<Material> materialList = switch (difficulty) {
-      case NORMAL -> List.of(Material.DIRT, Material.SAND);
-      case HARD -> List.of(Material.DIRT, Material.SAND, Material.OAK_LOG);
-      default -> List.of(Material.DIRT);
+      // 文字数とかの表示確認のためまだテスト用
+      case NORMAL -> List.of(Material.OAK_LOG, Material.DARK_OAK_LOG);
+      case HARD -> List.of(Material.DIAMOND);
+      default -> List.of(Material.DIRT, Material.SAND);
     };
 
     int random = new SplittableRandom().nextInt(materialList.size());
@@ -209,6 +247,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     bonusScore = switch (treasure) {
       case SAND -> 10;
       case OAK_LOG -> 20;
+      case DIAMOND -> 50;
       default -> 0;
     };
     return bonusScore;
