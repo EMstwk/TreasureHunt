@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -19,6 +18,7 @@ import plugin.treasurehunt.Main;
 import plugin.treasurehunt.PlayerScoreDao;
 import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.mapper.data.PlayerScore;
+import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
@@ -38,6 +38,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   private Material foundMaterial;
   private int gameScore;
   private int bonusScore;
+  private Countdown countdown;
   private GameScheduler gameScheduler;
 
   private final Main main;
@@ -78,53 +79,57 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param nowExecutingPlayer 現在実行中のプレイヤー情報
    */
   private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
-    // コマンド実行者が実行中のスケジューラがあればキャンセルします。
+    // コマンド実行者が実行中のカウントダウンがあればキャンセルします。
+    if (!Objects.isNull(nowExecutingPlayer.getCountdown())) {
+      executingPlayerList.stream()
+          .filter(p -> p.getPlayerName().equals(player.getName()))
+          .findFirst()
+          .ifPresent(p -> {
+            p.getCountdown().cancel();
+          });
+    }
+
+    // コマンド実行者が実行中のゲームスケジューラがあればキャンセルします。
     if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
       executingPlayerList.stream()
           .filter(p -> p.getPlayerName().equals(player.getName()))
           .findFirst()
           .ifPresent(p -> {
-            p.setCountdown(0);
             p.getGameScheduler().cancel();
             p.getGameScheduler().getBossBar().removeAll();
           });
     }
 
-    // カウントダウン終了後にゲーム開始
-    nowExecutingPlayer.setCountdown(5);
-    Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-      if (nowExecutingPlayer.getCountdown() <= 0) {
-        Runnable.cancel();
+    // カウントダウン開始　模索中
+    countdown = new Countdown(main, player);
+    nowExecutingPlayer.setCountdown(countdown);
+    countdown.setCompletionCallback(() -> {
+      treasure = getTreasureMaterial(difficulty);
+      nowExecutingPlayer.setDifficulty(difficulty);
+      nowExecutingPlayer.setTreasure(treasure);
 
-        treasure = getTreasureMaterial(difficulty);
-        nowExecutingPlayer.setDifficulty(difficulty);
-        nowExecutingPlayer.setTreasure(treasure);
+      gameScheduler = new GameScheduler(main, player);
+      nowExecutingPlayer.setGameScheduler(gameScheduler);
 
-        gameScheduler = new GameScheduler(main, player);
-        nowExecutingPlayer.setGameScheduler(gameScheduler);
+      gameScheduler.startTask();
 
-        gameScheduler.startTask();
+      // sendTitle調整中
+      player.sendTitle("【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
+              + ChatColor.RESET + "】を探そう！",
+          nowExecutingPlayer.getTreasure() + "のボーナススコアは【"
+              + ChatColor.AQUA + getBonusScore(nowExecutingPlayer.getTreasure())
+              + ChatColor.RESET + "点】です！",
+          0, 60, 10);
 
-        // sendTitle調整中
-        player.sendTitle("【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-                + ChatColor.RESET + "】を探そう！",
-            nowExecutingPlayer.getTreasure() + "のボーナススコアは【"
-                + ChatColor.AQUA + getBonusScore(nowExecutingPlayer.getTreasure())
-                + ChatColor.RESET + "点】です！",
-            0, 60, 10);
+      // ↑のtitleと要調整
+      player.sendMessage(
+          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
+              + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(
+              nowExecutingPlayer.getTreasure())
+              + ChatColor.RESET + ")】を探しましょう！");
+    });
 
-        // ↑のtitleと要調整
-        player.sendMessage(
-            "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-                + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(
-                nowExecutingPlayer.getTreasure())
-                + ChatColor.RESET + ")】を探しましょう！");
-        return;
-      }
-      player.sendTitle("ゲーム開始まで： " + ChatColor.AQUA + nowExecutingPlayer.getCountdown(),
-          "", 0, 25, 0);
-      nowExecutingPlayer.setCountdown(nowExecutingPlayer.getCountdown() - 1);
-    }, 0, 20);
+    countdown.startCountdown();
   }
 
   /**
