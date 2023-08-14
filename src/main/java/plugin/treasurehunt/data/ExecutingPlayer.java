@@ -21,6 +21,8 @@ public class ExecutingPlayer {
 
   private GameScheduler gameScheduler;
 
+  private int countdown;
+
   public ExecutingPlayer(String playerName) {
     this.playerName = playerName;
   }

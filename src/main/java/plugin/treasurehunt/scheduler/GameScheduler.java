@@ -14,7 +14,7 @@ import plugin.treasurehunt.Main;
 @Setter
 public class GameScheduler extends BukkitRunnable {
 
-  private static final int initGameTime = 30;
+  private static final int initGameTime = 40;
   private int gameTime = initGameTime;
   private BossBar bossBar;
   private Double progress = 1.0;
@@ -36,11 +36,14 @@ public class GameScheduler extends BukkitRunnable {
     if (gameTime <= 0) {
       cancel();
       player.sendTitle("残念！時間切れです", "", 0, 60, 10);
+      player.sendMessage("宝探しゲームを終了しました。");
 
       // 模索中
       bossBar.removeAll();
       return;
-    } else if (!(gameTime == initGameTime) && (gameTime % 10 == 0 || gameTime <= 10)) {
+    } else if (gameTime <= 10) {
+      player.sendTitle(String.valueOf(gameTime), "", 0, 20, 5);
+    } else if (!(gameTime == initGameTime) && gameTime % 10 == 0) {
       player.sendTitle("", "残り" + gameTime + "秒", 0, 20, 5);
     }
 
@@ -55,9 +58,5 @@ public class GameScheduler extends BukkitRunnable {
   public void startTask() {
     setGameTime(gameTime);
     runTaskTimer(main, 0, 20);
-  }
-
-  public void cancelTask() {
-    cancel();
   }
 }
