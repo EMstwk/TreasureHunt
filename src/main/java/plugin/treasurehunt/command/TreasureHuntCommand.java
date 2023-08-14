@@ -125,41 +125,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           "", 0, 25, 0);
       nowExecutingPlayer.setCountdown(nowExecutingPlayer.getCountdown() - 1);
     }, 0, 20);
-
-//    nowExecutingPlayer.setCountdown(5);
-//    Bukkit.getScheduler().runTaskTimer(main, Runnable -> {
-//      if (nowExecutingPlayer.getCountdown() <= 0) {
-//        Runnable.cancel();
-//        return;
-//      }
-//      player.sendTitle("ゲーム開始まで： " + ChatColor.AQUA + nowExecutingPlayer.getCountdown(), "",
-//          0,
-//          25, 0);
-//      nowExecutingPlayer.setCountdown(nowExecutingPlayer.getCountdown() - 1);
-//    }, 0, 20);
-//
-//    treasure = setTreasureMaterial(difficulty);
-//    nowExecutingPlayer.setDifficulty(difficulty);
-//    nowExecutingPlayer.setTreasure(treasure);
-//
-//    gameScheduler = new GameScheduler(main, player);
-//    nowExecutingPlayer.setGameScheduler(gameScheduler);
-//
-//    gameScheduler.startTask();
-//
-//    // sendTitle調整中
-//    player.sendTitle("【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-//            + ChatColor.RESET + "】を探そう！",
-//        nowExecutingPlayer.getTreasure() + "のボーナススコアは【"
-//            + ChatColor.AQUA + getBonusScore(nowExecutingPlayer.getTreasure())
-//            + ChatColor.RESET + "点】です！",
-//        0, 60, 10);
-//
-//    // ↑のtitleと要調整
-//    player.sendMessage("宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-//        + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(
-//        nowExecutingPlayer.getTreasure())
-//        + ChatColor.RESET + ")】を探しましょう！");
   }
 
   /**
