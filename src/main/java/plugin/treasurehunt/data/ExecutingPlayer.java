@@ -3,6 +3,7 @@ package plugin.treasurehunt.data;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Material;
+import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
@@ -19,9 +20,8 @@ public class ExecutingPlayer {
 
   private Material treasure;
 
+  private Countdown countdown;
   private GameScheduler gameScheduler;
-
-  private int countdown;
 
   public ExecutingPlayer(String playerName) {
     this.playerName = playerName;
