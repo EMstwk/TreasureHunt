@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Select;
 
 public interface PlayerScoreMapper {
 
-  @Select("select * from player_score")
+  @Select("select * from player_score order by score desc, id desc limit 5")
   List<PlayerScore> selectList();
 
   @Insert("insert player_score(player_name, score, difficulty, treasure, registered_at) values (#{playerName}, #{score}, #{difficulty}, #{treasure}, now())")
