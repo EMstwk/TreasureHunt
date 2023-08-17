@@ -302,4 +302,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   private int getTotalScore(Material treasure, GameScheduler gameScheduler) {
     return getBonusScore(treasure) + getGameScore(gameScheduler);
   }
+
+  public List<ExecutingPlayer> getExecutingPlayerList() {
+    return executingPlayerList;
+  }
 }
