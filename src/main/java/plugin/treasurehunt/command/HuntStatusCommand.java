@@ -25,20 +25,16 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
 
     List<ExecutingPlayer> executingPlayerList = treasureHuntCommand.getExecutingPlayerList();
 
-    if (executingPlayerList.isEmpty()) {
-      player.sendMessage(ChatColor.RED + "このコマンドは宝探しゲーム実行中のみ使用できます。");
-      return false;
-    }
-
     boolean isExecutingPlayer = executingPlayerList.stream()
         .filter(p -> p.getPlayerName().equals(player.getName()))
         .anyMatch(p -> p.getGameScheduler() != null && !p.getGameScheduler().isCancelled());
 
-    if (isExecutingPlayer) {
-      player.sendMessage("現時点での取得可能スコア？表示予定");
-    } else {
+    if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
       player.sendMessage(ChatColor.RED + "このコマンドは宝探しゲーム実行中のみ使用できます。");
+      return false;
     }
+
+    player.sendMessage("現時点での取得可能スコア？表示予定");
     return false;
   }
 
