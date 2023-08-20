@@ -14,7 +14,7 @@ import plugin.treasurehunt.Main;
 @Setter
 public class GameScheduler extends BukkitRunnable {
 
-  private static final int initGameTime = 30;
+  private static final int initGameTime = 20;
   private int gameTime = initGameTime;
   private BossBar bossBar;
   private Double progress = 1.0;
