@@ -15,7 +15,7 @@ public class ExecutingPlayer {
 
   private String playerName;
   private int score;
-  private int gameTime;
+  // private int gameTime;
   private String difficulty;
 
   private Material treasure;

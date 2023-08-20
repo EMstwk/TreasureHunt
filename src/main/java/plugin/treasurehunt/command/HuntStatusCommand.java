@@ -1,6 +1,7 @@
 package plugin.treasurehunt.command;
 
 import java.util.List;
+import java.util.Optional;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -34,7 +35,21 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
       return false;
     }
 
-    player.sendMessage("現時点での取得可能スコア？表示予定");
+    Optional<ExecutingPlayer> nowExecutingPlayer = executingPlayerList.stream()
+        .filter(p -> p.getPlayerName().equals(player.getName()))
+        .findFirst();
+
+    nowExecutingPlayer.ifPresent(p -> {
+      int nowTotalScore = treasureHuntCommand.getTotalScore(p.getTreasure(), p.getGameScheduler());
+      int nowGameScore = treasureHuntCommand.getGameScore(p.getGameScheduler());
+      int nowBonusScore = treasureHuntCommand.getBonusScore(p.getTreasure());
+
+      player.sendMessage("現在の取得可能スコアは" + nowTotalScore + "点です。\n"
+          + ChatColor.GRAY + "(残り時間" + p.getGameScheduler().getGameTime() + "秒："
+          + nowGameScore
+          + "点、ボーナススコア：" + nowBonusScore + "点)");
+    });
+
     return false;
   }
 

@@ -2,6 +2,7 @@ package plugin.treasurehunt.command;
 
 import java.util.List;
 import java.util.Optional;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -31,7 +32,7 @@ public class HuntEndCommand extends BaseCommand {
             || (p.getGameScheduler() != null && !p.getGameScheduler().isCancelled())));
 
     if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage("このコマンドは宝探しゲーム実行中のみ使用できます。");
+      player.sendMessage(ChatColor.RED + "このコマンドは宝探しゲーム実行中のみ使用できます。");
       return false;
     }
 

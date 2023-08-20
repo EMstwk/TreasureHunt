@@ -264,7 +264,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return ボーナススコア
    */
-  private int getBonusScore(Material treasure) {
+  int getBonusScore(Material treasure) {
     bonusScore = switch (treasure) {
       case SAND -> 10;
       case OAK_LOG -> 20;
@@ -279,7 +279,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return ゲームスコア
    */
-  private int getGameScore(GameScheduler gameScheduler) {
+  int getGameScore(GameScheduler gameScheduler) {
     int remainingTime = gameScheduler.getGameTime();
 
     if (remainingTime > 15) {
@@ -299,7 +299,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @return 合計スコア
    */
-  private int getTotalScore(Material treasure, GameScheduler gameScheduler) {
+  int getTotalScore(Material treasure, GameScheduler gameScheduler) {
     return getBonusScore(treasure) + getGameScore(gameScheduler);
   }
 
