@@ -45,9 +45,9 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
       int nowBonusScore = treasureHuntCommand.getBonusScore(p.getTreasure());
 
       player.sendMessage("現在の取得可能スコアは" + nowTotalScore + "点です。\n"
-          + ChatColor.GRAY + "(残り時間" + p.getGameScheduler().getGameTime() + "秒："
-          + nowGameScore
-          + "点、ボーナススコア：" + nowBonusScore + "点)");
+          + ChatColor.GRAY + "(残り時間" + p.getGameScheduler().getGameTime() / 60 + "分"
+          + p.getGameScheduler().getGameTime() % 60 + "秒："
+          + nowGameScore + "点、ボーナススコア：" + nowBonusScore + "点)");
     });
 
     return false;

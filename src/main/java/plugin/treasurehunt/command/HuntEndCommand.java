@@ -1,6 +1,7 @@
 package plugin.treasurehunt.command;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -48,7 +49,7 @@ public class HuntEndCommand extends BaseCommand {
         p.getGameScheduler().getBossBar().removeAll();
       }
 
-      player.sendMessage(main.getConfig().getString("messages.endGame"));
+      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
       executingPlayerList.remove(p);
     });
 

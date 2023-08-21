@@ -205,7 +205,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         player.sendTitle(foundMaterial + " を発見！",
             player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore + ChatColor.RESET
                 + "点】です！", 0, 60, 10);
-        player.sendMessage("宝探しゲームを終了しました");
+        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
 
         // スコア登録処理
         playerScoreDao.insert(
