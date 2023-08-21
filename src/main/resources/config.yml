@@ -3,4 +3,4 @@ messages:
   ineligibleCommand: 'このコマンドは宝探しゲーム実行中のみ使用できます。'
 
 game:
-  initGameTime: 60
+  initGameTime: 180

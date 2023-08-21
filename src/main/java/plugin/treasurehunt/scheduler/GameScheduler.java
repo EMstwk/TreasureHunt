@@ -1,5 +1,6 @@
 package plugin.treasurehunt.scheduler;
 
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -40,20 +41,20 @@ public class GameScheduler extends BukkitRunnable {
     if (gameTime <= 0) {
       cancel();
       player.sendTitle("残念！時間切れです", "", 0, 60, 10);
-      player.sendMessage("宝探しゲームを終了しました。");
+      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
 
       // 模索中
       bossBar.removeAll();
       return;
     } else if (gameTime <= 10) {
       player.sendTitle(String.valueOf(gameTime), "", 0, 20, 5);
-    } else if (!(gameTime == initGameTime) && gameTime % 10 == 0) {
-      player.sendTitle("", "残り" + gameTime + "秒", 0, 20, 5);
+    } else if (!(gameTime == initGameTime) && gameTime % 60 == 0) {
+      player.sendTitle("", "残り" + gameTime / 60 + "分", 0, 20, 5);
     }
 
     //模索中
     bossBar.setProgress(progress);
-    bossBar.setTitle("残り" + gameTime + "秒");
+    bossBar.setTitle("残り" + gameTime / 60 + "分" + gameTime % 60 + "秒");
     progress -= (double) 1 / initGameTime;
 
     gameTime -= 1;
