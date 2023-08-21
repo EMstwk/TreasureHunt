@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import plugin.treasurehunt.Main;
@@ -14,8 +15,8 @@ import plugin.treasurehunt.Main;
 @Setter
 public class GameScheduler extends BukkitRunnable {
 
-  private static final int initGameTime = 20;
-  private int gameTime = initGameTime;
+  private int initGameTime;
+  private int gameTime;
   private BossBar bossBar;
   private Double progress = 1.0;
 
@@ -26,7 +27,10 @@ public class GameScheduler extends BukkitRunnable {
     this.main = main;
     this.player = player;
 
-    // 模索中
+    FileConfiguration config = main.getConfig();
+    initGameTime = config.getInt("game.initGameTime");
+    gameTime = initGameTime;
+
     bossBar = Bukkit.createBossBar("Countdown", BarColor.GREEN, BarStyle.SOLID);
     bossBar.addPlayer(player);
   }

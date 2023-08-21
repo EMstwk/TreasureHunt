@@ -32,7 +32,7 @@ public class HuntEndCommand extends BaseCommand {
             || (p.getGameScheduler() != null && !p.getGameScheduler().isCancelled())));
 
     if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage(ChatColor.RED + "このコマンドは宝探しゲーム実行中のみ使用できます。");
+      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.ineligibleCommand"));
       return false;
     }
 
@@ -48,7 +48,7 @@ public class HuntEndCommand extends BaseCommand {
         p.getGameScheduler().getBossBar().removeAll();
       }
 
-      player.sendMessage("宝探しゲームを終了しました。");
+      player.sendMessage(main.getConfig().getString("messages.endGame"));
       executingPlayerList.remove(p);
     });
 

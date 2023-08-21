@@ -10,6 +10,8 @@ public final class Main extends JavaPlugin {
 
   @Override
   public void onEnable() {
+    saveDefaultConfig();
+
     TreasureHuntCommand treasureHuntCommand = new TreasureHuntCommand(this);
     Bukkit.getPluginManager().registerEvents(treasureHuntCommand, this);
     getCommand("treasurehunt").setExecutor(treasureHuntCommand);
