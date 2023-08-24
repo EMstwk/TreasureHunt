@@ -10,6 +10,10 @@ import org.bukkit.entity.Player;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.data.ExecutingPlayer;
 
+/**
+ * 宝探しゲームの実行中に、ゲームを強制終了させるためのコマンドです。
+ * カウントダウンの実行中は、カウントダウンを強制終了させます。
+ */
 public class HuntEndCommand extends BaseCommand {
 
   private final Main main;
@@ -27,6 +31,7 @@ public class HuntEndCommand extends BaseCommand {
 
     List<ExecutingPlayer> executingPlayerList = treasureHuntCommand.getExecutingPlayerList();
 
+    // コマンドを実行したプレイヤーが、カウントダウンか宝探しゲームを実行中であればtrueを返します。
     boolean isExecutingPlayer = executingPlayerList.stream()
         .filter(p -> p.getPlayerName().equals(player.getName()))
         .anyMatch(p -> ((p.getCountdown() != null && !p.getCountdown().isCancelled())
@@ -52,7 +57,6 @@ public class HuntEndCommand extends BaseCommand {
       player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
       executingPlayerList.remove(p);
     });
-
     return false;
   }
 

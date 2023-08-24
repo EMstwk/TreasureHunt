@@ -1,5 +1,6 @@
 package plugin.treasurehunt;
 
+import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import plugin.treasurehunt.command.HuntEndCommand;
@@ -14,13 +15,12 @@ public final class Main extends JavaPlugin {
 
     TreasureHuntCommand treasureHuntCommand = new TreasureHuntCommand(this);
     Bukkit.getPluginManager().registerEvents(treasureHuntCommand, this);
-    getCommand("treasurehunt").setExecutor(treasureHuntCommand);
+    Objects.requireNonNull(getCommand("treasurehunt")).setExecutor(treasureHuntCommand);
 
     HuntEndCommand huntEndCommand = new HuntEndCommand(this, treasureHuntCommand);
-    getCommand("huntend").setExecutor(huntEndCommand);
+    Objects.requireNonNull(getCommand("huntend")).setExecutor(huntEndCommand);
 
     HuntStatusCommand huntStatusCommand = new HuntStatusCommand(this, treasureHuntCommand);
-    Bukkit.getPluginManager().registerEvents(huntStatusCommand, this);
-    getCommand("huntstatus").setExecutor(huntStatusCommand);
+    Objects.requireNonNull(getCommand("huntstatus")).setExecutor(huntStatusCommand);
   }
 }

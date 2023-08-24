@@ -7,15 +7,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import plugin.treasurehunt.Main;
 
+/**
+ * 宝探しゲームのコマンド実行時、ゲーム開始前に5秒のカウントダウンを表示させるスケジューラです。
+ * カウントダウン実行中にゲームの制限時間も表示し、カウントダウン終了後にゲームを開始します。
+ */
 @Getter
 @Setter
 public class Countdown extends BukkitRunnable {
 
   private int remainingTime;
+  private Runnable completionCallback;
+
   private final Main main;
   private Player player;
-
-  private Runnable completionCallback;
 
   public Countdown(Main main, Player player) {
     this.main = main;
@@ -31,12 +35,16 @@ public class Countdown extends BukkitRunnable {
     if (remainingTime <= 0) {
       cancel();
       if (completionCallback != null) {
-        completionCallback.run(); // カウントダウン終了時にコールバックを実行
+        // カウントダウン終了時にコールバックを実行します。
+        completionCallback.run();
       }
       return;
     }
+
+    int initGameTime = main.getConfig().getInt("game.initGameTime");
     player.sendTitle("ゲーム開始まで： " + ChatColor.AQUA + remainingTime,
-        "", 0, 25, 0);
+        ChatColor.RESET + "制限時間：" + initGameTime / 60 + "分" + initGameTime % 60 + "秒",
+        0, 25, 0);
     remainingTime -= 1;
   }
 

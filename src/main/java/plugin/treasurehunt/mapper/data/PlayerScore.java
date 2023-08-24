@@ -7,7 +7,7 @@ import lombok.Setter;
 import org.bukkit.Material;
 
 /**
- * プレイヤーのスコア情報を扱うオブジェクト。 DBに存在するテーブルと連動する。
+ * プレイヤーのスコア情報を扱うオブジェクトです。 DBに存在するテーブルと連動します。
  */
 @Getter
 @Setter

@@ -7,11 +7,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import plugin.treasurehunt.Main;
 
+/**
+ * ゲームの制限時間を管理するスケジューラです。
+ * ボスバーで残り時間を常時表示します。1分単位と残り10秒では、残り時間をタイトル表示もします。
+ */
 @Getter
 @Setter
 public class GameScheduler extends BukkitRunnable {
@@ -28,8 +31,7 @@ public class GameScheduler extends BukkitRunnable {
     this.main = main;
     this.player = player;
 
-    FileConfiguration config = main.getConfig();
-    initGameTime = config.getInt("game.initGameTime");
+    initGameTime = main.getConfig().getInt("game.initGameTime");
     gameTime = initGameTime;
 
     bossBar = Bukkit.createBossBar("Countdown", BarColor.GREEN, BarStyle.SOLID);
@@ -40,11 +42,10 @@ public class GameScheduler extends BukkitRunnable {
   public void run() {
     if (gameTime <= 0) {
       cancel();
+      bossBar.removeAll();
+
       player.sendTitle("残念！時間切れです", "", 0, 60, 10);
       player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
-
-      // 模索中
-      bossBar.removeAll();
       return;
     } else if (gameTime <= 10) {
       player.sendTitle(String.valueOf(gameTime), "", 0, 20, 5);
@@ -52,7 +53,6 @@ public class GameScheduler extends BukkitRunnable {
       player.sendTitle("", "残り" + gameTime / 60 + "分", 0, 20, 5);
     }
 
-    //模索中
     bossBar.setProgress(progress);
     bossBar.setTitle("残り" + gameTime / 60 + "分" + gameTime % 60 + "秒");
     progress -= (double) 1 / initGameTime;
@@ -61,7 +61,6 @@ public class GameScheduler extends BukkitRunnable {
   }
 
   public void startTask() {
-    setGameTime(gameTime);
     runTaskTimer(main, 0, 20);
   }
 }

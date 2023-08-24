@@ -22,7 +22,8 @@ import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
- * 制限時間内にランダムで指定されるブロックを入手し、スコアを獲得するゲームを起動するコマンドです。 スコアはブロックの種類、入手までにかかった時間によって変動します。
+ * 制限時間内にランダムで指定されるブロックを入手し、スコアを獲得する宝探しゲームを起動するコマンドです。
+ * スコアはブロックの種類、入手までにかかった時間によって変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
 
@@ -263,10 +264,12 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @return ボーナススコア
    */
   int getBonusScore(Material treasure) {
+    int initGameTime = main.getConfig().getInt("game.initGameTime");
+
     int bonusScore = switch (treasure) {
-      case SAND -> 10;
-      case OAK_LOG -> 20;
-      case DIAMOND -> 50;
+      case SAND -> initGameTime / 3;
+      case OAK_LOG -> (initGameTime / 3) * 2;
+      case DIAMOND -> initGameTime;
       default -> 0;
     };
     return bonusScore;
