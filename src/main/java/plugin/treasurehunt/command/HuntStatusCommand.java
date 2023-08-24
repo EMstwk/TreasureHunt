@@ -10,6 +10,10 @@ import org.bukkit.event.Listener;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.data.ExecutingPlayer;
 
+/**
+ * 宝探しゲームの実行中に、コマンド入力時点での取得可能スコアを表示するためのコマンドです。
+ * 残り時間によるスコアと、対象マテリアルによるボーナススコアも分けて表示します。
+ */
 public class HuntStatusCommand extends BaseCommand implements Listener {
 
   private final Main main;
@@ -26,6 +30,7 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
 
     List<ExecutingPlayer> executingPlayerList = treasureHuntCommand.getExecutingPlayerList();
 
+    // コマンドを実行したプレイヤーが、宝探しゲームを実行中であればtrueを返します。
     boolean isExecutingPlayer = executingPlayerList.stream()
         .filter(p -> p.getPlayerName().equals(player.getName()))
         .anyMatch(p -> p.getGameScheduler() != null && !p.getGameScheduler().isCancelled());
@@ -43,13 +48,12 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
       int nowTotalScore = treasureHuntCommand.getTotalScore(p.getTreasure(), p.getGameScheduler());
       int nowGameScore = treasureHuntCommand.getGameScore(p.getGameScheduler());
       int nowBonusScore = treasureHuntCommand.getBonusScore(p.getTreasure());
+      int nowGameTime = p.getGameScheduler().getGameTime();
 
       player.sendMessage("現在の取得可能スコアは" + nowTotalScore + "点です。\n"
-          + ChatColor.GRAY + "(残り時間" + p.getGameScheduler().getGameTime() / 60 + "分"
-          + p.getGameScheduler().getGameTime() % 60 + "秒："
+          + ChatColor.GRAY + "(残り時間" + nowGameTime / 60 + "分" + nowGameTime % 60 + "秒："
           + nowGameScore + "点、ボーナススコア：" + nowBonusScore + "点)");
     });
-
     return false;
   }
 

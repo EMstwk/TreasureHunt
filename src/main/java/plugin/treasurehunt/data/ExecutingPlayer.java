@@ -7,7 +7,7 @@ import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
- * TreasureHuntのゲームを実行する際のプレイヤー情報を扱うオブジェクト。
+ * TreasureHuntのゲームを実行する際の、プレイヤー情報を扱うオブジェクトです。
  */
 @Getter
 @Setter
@@ -15,9 +15,7 @@ public class ExecutingPlayer {
 
   private String playerName;
   private int score;
-  // private int gameTime;
   private String difficulty;
-
   private Material treasure;
 
   private Countdown countdown;
