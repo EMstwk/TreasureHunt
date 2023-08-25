@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.potion.PotionEffect;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.PlayerScoreDao;
 import plugin.treasurehunt.data.ExecutingPlayer;
@@ -67,6 +68,12 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     startGame(player, difficulty, nowExecutingPlayer);
 
     return true;
+  }
+
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
+      String[] args) {
+    return false;
   }
 
   /**
@@ -169,6 +176,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     Countdown countdown = new Countdown(main, player);
     nowExecutingPlayer.setCountdown(countdown);
     countdown.setCompletionCallback(() -> {
+      initPlayerStatus(player);
+
       treasure = getTreasureMaterial(difficulty);
       nowExecutingPlayer.setDifficulty(difficulty);
       nowExecutingPlayer.setTreasure(treasure);
@@ -191,6 +200,20 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
               + ChatColor.RESET + "点)】を探しましょう！");
     });
     countdown.startCountdown();
+  }
+
+  /**
+   * ゲーム開始時に、プレイヤーの状態を設定します。体力と満腹度を最大にし、プレイヤーに設定されている特殊効果は削除します。
+   *
+   * @param player コマンドを実行したプレイヤー
+   */
+  private void initPlayerStatus(Player player) {
+    player.setHealth(20);
+    player.setFoodLevel(20);
+
+    player.getActivePotionEffects().stream()
+        .map(PotionEffect::getType)
+        .forEach(player::removePotionEffect);
   }
 
   /**
@@ -226,12 +249,31 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     return bonusScore;
   }
 
-  @Override
-  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
-      String[] args) {
-    return false;
+  /**
+   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
+   *
+   * @return ゲームスコア
+   */
+  int getGameScore(GameScheduler gameScheduler) {
+    int remainingTime = gameScheduler.getGameTime();
+    return (remainingTime / 30) * 30 + 30;
   }
 
+  /**
+   * ボーナススコアとゲームスコアを合算し、合計スコアを返します。
+   *
+   * @return 合計スコア
+   */
+  int getTotalScore(Material treasure, GameScheduler gameScheduler) {
+    return getBonusScore(treasure) + getGameScore(gameScheduler);
+  }
+
+  /**
+   * プレイヤーがゲームの対象マテリアルを入手した場合、実行中のゲームを終了し、合計スコアを表示します。
+   * プレイヤー名、スコア等の情報は、DBに記録します。
+   *
+   * @param e エンティティがアイテムを入手するイベント
+   */
   @EventHandler
   public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
     if (!(e.getEntity() instanceof Player player)) {
@@ -267,25 +309,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         executingPlayerList.remove(p);
       }
     });
-  }
-
-  /**
-   * ボーナススコアとゲームスコアを合算し、合計スコアを返します。
-   *
-   * @return 合計スコア
-   */
-  int getTotalScore(Material treasure, GameScheduler gameScheduler) {
-    return getBonusScore(treasure) + getGameScore(gameScheduler);
-  }
-
-  /**
-   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
-   *
-   * @return ゲームスコア
-   */
-  int getGameScore(GameScheduler gameScheduler) {
-    int remainingTime = gameScheduler.getGameTime();
-    return (remainingTime / 30) * 30 + 30;
   }
 
   /**
