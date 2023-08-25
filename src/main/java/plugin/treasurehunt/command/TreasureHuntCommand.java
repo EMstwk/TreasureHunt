@@ -22,7 +22,7 @@ import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
- * 制限時間内にランダムで指定されるブロックを入手し、スコアを獲得する宝探しゲームを起動するコマンドです。
+ * 制限時間内にランダムで指定されるマテリアルを入手しスコアを獲得する、宝探しゲームを起動するコマンドです。
  * スコアはブロックの種類、入手までにかかった時間によって変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
@@ -37,11 +37,10 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   private Material treasure;
   private Material foundMaterial;
-  private Countdown countdown;
   private GameScheduler gameScheduler;
 
   private final Main main;
-  private PlayerScoreDao playerScoreDao = new PlayerScoreDao();
+  private final PlayerScoreDao playerScoreDao = new PlayerScoreDao();
 
   public List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
 
@@ -71,97 +70,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームを開始します。入手すべきブロックを指定し、スケジューラを実行します。 コマンドを実行したプレイヤーが既に実行中のスケジューラがあれば、重複しないよう既存のものをキャンセルします。
-   *
-   * @param player             コマンドを実行したプレイヤー
-   * @param difficulty         難易度
-   * @param nowExecutingPlayer 現在実行中のプレイヤー情報
-   */
-  private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
-    // コマンド実行者が実行中のカウントダウンがあればキャンセルします。
-    if (!Objects.isNull(nowExecutingPlayer.getCountdown())) {
-      executingPlayerList.stream()
-          .filter(p -> p.getPlayerName().equals(player.getName()))
-          .findFirst()
-          .ifPresent(p -> {
-            p.getCountdown().cancel();
-          });
-    }
-
-    // コマンド実行者が実行中のゲームスケジューラがあればキャンセルします。
-    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
-      executingPlayerList.stream()
-          .filter(p -> p.getPlayerName().equals(player.getName()))
-          .findFirst()
-          .ifPresent(p -> {
-            p.getGameScheduler().cancel();
-            p.getGameScheduler().getBossBar().removeAll();
-          });
-    }
-
-    // カウントダウン開始　模索中
-    countdown = new Countdown(main, player);
-    nowExecutingPlayer.setCountdown(countdown);
-    countdown.setCompletionCallback(() -> {
-      treasure = getTreasureMaterial(difficulty);
-      nowExecutingPlayer.setDifficulty(difficulty);
-      nowExecutingPlayer.setTreasure(treasure);
-
-      gameScheduler = new GameScheduler(main, player);
-      nowExecutingPlayer.setGameScheduler(gameScheduler);
-
-      gameScheduler.startTask();
-
-      // sendTitle調整中
-      player.sendTitle("【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-              + ChatColor.RESET + "】を探そう！",
-          nowExecutingPlayer.getTreasure() + "のボーナススコアは【"
-              + ChatColor.AQUA + getBonusScore(nowExecutingPlayer.getTreasure())
-              + ChatColor.RESET + "点】です！",
-          0, 60, 10);
-
-      // ↑のtitleと要調整
-      player.sendMessage(
-          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowExecutingPlayer.getTreasure()
-              + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(
-              nowExecutingPlayer.getTreasure())
-              + ChatColor.RESET + ")】を探しましょう！");
-    });
-
-    countdown.startCountdown();
-  }
-
-  /**
-   * 現在実行しているプレイヤーのスコア情報を取得する。
-   *
-   * @param player コマンドを実行したプレイヤー
-   * @return 現在実行しているプレイヤーのスコア情報
-   */
-  private ExecutingPlayer getExecutingPlayer(Player player) {
-    ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
-
-    // リストにコマンド実行者と同じ名前が入ってたらそのプレイヤーの情報を返して、
-    // 空か一致しなければ新規でプレイヤーの情報追加して返し、Nullなら今の実行者情報を返す
-    if (executingPlayerList.isEmpty()) {
-      nowExecutingPlayer = addNewPlayer(player);
-    } else {
-      nowExecutingPlayer = executingPlayerList.stream()
-          .findFirst()
-          .map(p -> p.getPlayerName().equals(player.getName())
-              ? p
-              : addNewPlayer(player)).orElse(nowExecutingPlayer);
-    }
-    return nowExecutingPlayer;
-  }
-
-  @Override
-  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
-      String[] args) {
-    return false;
-  }
-
-  /**
-   * 現在登録されているスコアの一覧をメッセージに送る。
+   * 現在登録されているスコアの一覧をメッセージに送ります。
    *
    * @param player プレイヤー
    */
@@ -178,69 +87,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
   }
 
-  @EventHandler
-  public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
-    if (!(e.getEntity() instanceof Player)) {
-      return;
-    }
-
-    Player player = (Player) e.getEntity();
-    foundMaterial = e.getItem().getItemStack().getType();
-
-    Optional<ExecutingPlayer> nowExecutingPlayer = executingPlayerList.stream()
-        .filter(p -> p.getPlayerName().equals(player.getName()))
-        .findFirst();
-
-    nowExecutingPlayer.ifPresent(executingPlayer -> {
-      if (executingPlayer.getTreasure().equals(foundMaterial) && !executingPlayer.getGameScheduler()
-          .isCancelled()) {
-        executingPlayer.getGameScheduler().cancel();
-        executingPlayer.getGameScheduler().getBossBar().removeAll();
-
-        int totalScore = getTotalScore(executingPlayer.getTreasure(),
-            executingPlayer.getGameScheduler());
-        executingPlayer.setScore(totalScore);
-
-        player.sendTitle(foundMaterial + " を発見！",
-            player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore + ChatColor.RESET
-                + "点】です！", 0, 60, 10);
-        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
-
-        // スコア登録処理
-        playerScoreDao.insert(
-            new PlayerScore(executingPlayer.getPlayerName(),
-                executingPlayer.getScore(),
-                executingPlayer.getDifficulty(),
-                executingPlayer.getTreasure()));
-
-        executingPlayerList.remove(executingPlayer);
-      }
-    });
-  }
-
-  private ExecutingPlayer addNewPlayer(Player player) {
-    ExecutingPlayer newPlayer = new ExecutingPlayer(player.getName());
-    executingPlayerList.add(newPlayer);
-    return newPlayer;
-  }
-
-  /**
-   * ゲームで探すMaterialを、対象のリストからランダムに設定します。
-   *
-   * @return ゲームで探すMaterial
-   */
-  private Material getTreasureMaterial(String difficulty) {
-    List<Material> materialList = switch (difficulty) {
-      // 文字数とかの表示確認のためまだテスト用
-      case NORMAL -> List.of(Material.OAK_LOG, Material.DARK_OAK_LOG);
-      case HARD -> List.of(Material.DIAMOND);
-      default -> List.of(Material.DIRT, Material.SAND);
-    };
-
-    int random = new SplittableRandom().nextInt(materialList.size());
-    return materialList.get(random);
-  }
-
   /**
    * 難易度をコマンド引数から取得します。
    *
@@ -248,7 +94,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param args   コマンド引数
    * @return 難易度
    */
-  private String getDifficulty(Player player, String args[]) {
+  private String getDifficulty(Player player, String[] args) {
     if (args.length == 1 && (EASY.equals(args[0]) || NORMAL.equals(args[0]) || HARD.equals(
         args[0]))) {
       return args[0];
@@ -259,7 +105,112 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームで探す対象Materialの種類により、ボーナススコアの設定をします。
+   * 現在実行しているプレイヤーのスコア情報を取得します。
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @return 現在実行しているプレイヤーのスコア情報
+   */
+  private ExecutingPlayer getExecutingPlayer(Player player) {
+    ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
+
+    // リストでコマンド実行中のプレイヤー情報を管理します。
+    if (executingPlayerList.isEmpty()) {
+      nowExecutingPlayer = addNewPlayer(player);
+    } else {
+      nowExecutingPlayer = executingPlayerList.stream()
+          .findFirst()
+          .map(p -> p.getPlayerName().equals(player.getName())
+              ? p
+              : addNewPlayer(player)).orElse(nowExecutingPlayer);
+    }
+    return nowExecutingPlayer;
+  }
+
+  /**
+   * 新規のプレイヤー情報をリストに追加します。
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @return 新規プレイヤー
+   */
+  private ExecutingPlayer addNewPlayer(Player player) {
+    ExecutingPlayer newPlayer = new ExecutingPlayer(player.getName());
+    executingPlayerList.add(newPlayer);
+    return newPlayer;
+  }
+
+  /**
+   * ゲームを開始します。入手すべきマテリアルを指定し、スケジューラを実行します。
+   * コマンドを実行したプレイヤーが既に実行中のスケジューラがあれば、重複しないよう既存のものをキャンセルします。
+   *
+   * @param player             コマンドを実行したプレイヤー
+   * @param difficulty         難易度
+   * @param nowExecutingPlayer 現在実行中のプレイヤー情報
+   */
+  private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
+    // コマンド実行者が実行中のカウントダウンがあればキャンセルします。
+    if (!Objects.isNull(nowExecutingPlayer.getCountdown())) {
+      executingPlayerList.stream()
+          .filter(p -> p.getPlayerName().equals(player.getName()))
+          .findFirst()
+          .ifPresent(p -> p.getCountdown().cancel());
+    }
+
+    // コマンド実行者が実行中のゲームスケジューラがあればキャンセルします。
+    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
+      executingPlayerList.stream()
+          .filter(p -> p.getPlayerName().equals(player.getName()))
+          .findFirst()
+          .ifPresent(p -> {
+            p.getGameScheduler().cancel();
+            p.getGameScheduler().getBossBar().removeAll();
+          });
+    }
+
+    Countdown countdown = new Countdown(main, player);
+    nowExecutingPlayer.setCountdown(countdown);
+    countdown.setCompletionCallback(() -> {
+      treasure = getTreasureMaterial(difficulty);
+      nowExecutingPlayer.setDifficulty(difficulty);
+      nowExecutingPlayer.setTreasure(treasure);
+
+      gameScheduler = new GameScheduler(main, player);
+      nowExecutingPlayer.setGameScheduler(gameScheduler);
+
+      gameScheduler.startTask();
+
+      Material nowTreasure = nowExecutingPlayer.getTreasure();
+      player.sendTitle("【" + ChatColor.AQUA + nowTreasure + ChatColor.RESET + "】を探そう！",
+          nowTreasure + "のボーナススコアは【"
+              + ChatColor.AQUA + getBonusScore(nowTreasure) + ChatColor.RESET + "点】です！",
+          0, 60, 10);
+
+      // スコア確認コマンドを実行しなくても対象マテリアル等が確認できるよう、タイトルと合わせメッセージも送信します。
+      player.sendMessage(
+          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowTreasure
+              + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(nowTreasure)
+              + ChatColor.RESET + "点)】を探しましょう！");
+    });
+    countdown.startCountdown();
+  }
+
+  /**
+   * ゲームで探すマテリアルを、対象のリストからランダムに設定します。
+   *
+   * @return ゲームで探すマテリアル
+   */
+  private Material getTreasureMaterial(String difficulty) {
+    List<Material> materialList = switch (difficulty) {
+      case NORMAL -> List.of(Material.OAK_LOG, Material.DARK_OAK_LOG);
+      case HARD -> List.of(Material.DIAMOND);
+      default -> List.of(Material.DIRT, Material.SAND);
+    };
+
+    int random = new SplittableRandom().nextInt(materialList.size());
+    return materialList.get(random);
+  }
+
+  /**
+   * ゲームで探すマテリアルの種類により、ボーナススコアの設定をします。
    *
    * @return ボーナススコア
    */
@@ -275,16 +226,47 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     return bonusScore;
   }
 
-  /**
-   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
-   *
-   * @return ゲームスコア
-   */
-  int getGameScore(GameScheduler gameScheduler) {
-    int remainingTime = gameScheduler.getGameTime();
-    int gameScore = (remainingTime / 30) * 30 + 30;
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
+      String[] args) {
+    return false;
+  }
 
-    return gameScore;
+  @EventHandler
+  public void onEntityPickupItemEvent(EntityPickupItemEvent e) {
+    if (!(e.getEntity() instanceof Player player)) {
+      return;
+    }
+
+    foundMaterial = e.getItem().getItemStack().getType();
+
+    Optional<ExecutingPlayer> nowExecutingPlayer = executingPlayerList.stream()
+        .filter(p -> p.getPlayerName().equals(player.getName()))
+        .findFirst();
+
+    nowExecutingPlayer.ifPresent(p -> {
+      Material nowTreasure = p.getTreasure();
+      GameScheduler nowGameScheduler = p.getGameScheduler();
+
+      if (nowTreasure.equals(foundMaterial) && !nowGameScheduler.isCancelled()) {
+        nowGameScheduler.cancel();
+        nowGameScheduler.getBossBar().removeAll();
+
+        int totalScore = getTotalScore(nowTreasure, nowGameScheduler);
+        p.setScore(totalScore);
+
+        player.sendTitle(foundMaterial + " を発見！",
+            player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore
+                + ChatColor.RESET + "点】です！", 0, 60, 10);
+        // ゲーム開始時にメッセージを送信しているので、履歴がおかしくならないよう終了時にもメッセージを送信します。
+        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
+
+        playerScoreDao.insert(
+            new PlayerScore(p.getPlayerName(), p.getScore(), p.getDifficulty(), nowTreasure));
+
+        executingPlayerList.remove(p);
+      }
+    });
   }
 
   /**
@@ -296,6 +278,21 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     return getBonusScore(treasure) + getGameScore(gameScheduler);
   }
 
+  /**
+   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
+   *
+   * @return ゲームスコア
+   */
+  int getGameScore(GameScheduler gameScheduler) {
+    int remainingTime = gameScheduler.getGameTime();
+    return (remainingTime / 30) * 30 + 30;
+  }
+
+  /**
+   * 他クラスからでも、executingPlayerListの情報を取得します。
+   *
+   * @return executingPlayerList
+   */
   public List<ExecutingPlayer> getExecutingPlayerList() {
     return executingPlayerList;
   }

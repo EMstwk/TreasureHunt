@@ -7,7 +7,7 @@ import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
- * TreasureHuntのゲームを実行する際の、プレイヤー情報を扱うオブジェクトです。
+ * 宝探しゲームを実行する際の、プレイヤー情報を扱うオブジェクトです。
  */
 @Getter
 @Setter
