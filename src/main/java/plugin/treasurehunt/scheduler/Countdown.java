@@ -41,7 +41,7 @@ public class Countdown extends BukkitRunnable {
       return;
     }
 
-    int initGameTime = main.getConfig().getInt("game.initGameTime");
+    int initGameTime = main.getConfig().getInt("Game.initGameTime");
     player.sendTitle("ゲーム開始まで： " + ChatColor.AQUA + remainingTime,
         ChatColor.RESET + "制限時間：" + initGameTime / 60 + "分" + initGameTime % 60 + "秒",
         0, 25, 0);

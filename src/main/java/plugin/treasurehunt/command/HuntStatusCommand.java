@@ -36,7 +36,7 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
         .anyMatch(p -> p.getGameScheduler() != null && !p.getGameScheduler().isCancelled());
 
     if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.ineligibleCommand"));
+      player.sendMessage(ChatColor.RED + main.getConfig().getString("Messages.ineligibleCommand"));
       return false;
     }
 
