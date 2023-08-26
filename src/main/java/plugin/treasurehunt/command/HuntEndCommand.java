@@ -38,7 +38,7 @@ public class HuntEndCommand extends BaseCommand {
             || (p.getGameScheduler() != null && !p.getGameScheduler().isCancelled())));
 
     if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.ineligibleCommand"));
+      player.sendMessage(ChatColor.RED + main.getConfig().getString("Messages.ineligibleCommand"));
       return false;
     }
 
@@ -54,7 +54,7 @@ public class HuntEndCommand extends BaseCommand {
         p.getGameScheduler().getBossBar().removeAll();
       }
 
-      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
+      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("Messages.endGame")));
       executingPlayerList.remove(p);
     });
     return false;

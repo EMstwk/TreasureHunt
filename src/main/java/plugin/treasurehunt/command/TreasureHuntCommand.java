@@ -88,7 +88,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           + playerScore.getPlayerName() + " | "
           + playerScore.getScore() + " | "
           + playerScore.getDifficulty() + " | "
-          + playerScore.getTreasure() + " | "
+          + getJPMaterialName(playerScore.getTreasure()) + " | "
           + playerScore.getRegisteredAt()
           .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
@@ -112,7 +112,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * 現在実行しているプレイヤーのスコア情報を取得します。
+   * コマンド実行中のプレイヤー情報をリストで管理し、プレイヤーのスコア情報を取得します。
    *
    * @param player コマンドを実行したプレイヤー
    * @return 現在実行しているプレイヤーのスコア情報
@@ -120,7 +120,6 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   private ExecutingPlayer getExecutingPlayer(Player player) {
     ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
 
-    // リストでコマンド実行中のプレイヤー情報を管理します。
     if (executingPlayerList.isEmpty()) {
       nowExecutingPlayer = addNewPlayer(player);
     } else {
@@ -188,14 +187,16 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       gameScheduler.startTask();
 
       Material nowTreasure = nowExecutingPlayer.getTreasure();
-      player.sendTitle("【" + ChatColor.AQUA + nowTreasure + ChatColor.RESET + "】を探そう！",
-          nowTreasure + "のボーナススコアは【"
-              + ChatColor.AQUA + getBonusScore(nowTreasure) + ChatColor.RESET + "点】です！",
-          0, 60, 10);
+      String japaneseTreasureName = getJPMaterialName(nowTreasure);
+      player.sendTitle(
+          "【" + ChatColor.AQUA + japaneseTreasureName + ChatColor.RESET + "】",
+          ChatColor.BOLD + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(nowTreasure)
+              + ChatColor.RESET + "" + ChatColor.BOLD + "点）を探そう！",
+          0, 70, 30);
 
       // スコア確認コマンドを実行しなくても対象マテリアル等が確認できるよう、タイトルと合わせメッセージも送信します。
       player.sendMessage(
-          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowTreasure
+          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + japaneseTreasureName
               + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + getBonusScore(nowTreasure)
               + ChatColor.RESET + "点)】を探しましょう！");
     });
@@ -238,7 +239,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @return ボーナススコア
    */
   int getBonusScore(Material treasure) {
-    int initGameTime = main.getConfig().getInt("game.initGameTime");
+    int initGameTime = main.getConfig().getInt("Game.initGameTime");
 
     int bonusScore = switch (treasure) {
       case SAND -> initGameTime / 3;
@@ -297,11 +298,11 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         int totalScore = getTotalScore(nowTreasure, nowGameScheduler);
         p.setScore(totalScore);
 
-        player.sendTitle(foundMaterial + " を発見！",
+        player.sendTitle(getJPMaterialName(foundMaterial) + " を発見！",
             player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore
                 + ChatColor.RESET + "点】です！", 0, 60, 10);
         // ゲーム開始時にメッセージを送信しているので、履歴がおかしくならないよう終了時にもメッセージを送信します。
-        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
+        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("Messages.endGame")));
 
         playerScoreDao.insert(
             new PlayerScore(p.getPlayerName(), p.getScore(), p.getDifficulty(), nowTreasure));
@@ -318,5 +319,16 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    */
   public List<ExecutingPlayer> getExecutingPlayerList() {
     return executingPlayerList;
+  }
+
+  /**
+   * プレイヤーに表示されるマテリアル名を日本語名に変更します。
+   * API等からの日本語表記の方法がわからなかったため、設定ファイルで日本語名を管理しています。
+   *
+   * @param material プレイヤーに表示されるマテリアル
+   * @return マテリアルの日本語名
+   */
+  private String getJPMaterialName(Material material) {
+    return Objects.requireNonNull(main.getConfig().getString("Material." + material.name()));
   }
 }
