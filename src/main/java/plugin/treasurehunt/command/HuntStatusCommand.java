@@ -36,7 +36,7 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
         .anyMatch(p -> p.getGameScheduler() != null && !p.getGameScheduler().isCancelled());
 
     if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage(ChatColor.RED + main.getConfig().getString("Messages.ineligibleCommand"));
+      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.ineligibleCommand"));
       return false;
     }
 
@@ -45,9 +45,9 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
         .findFirst();
 
     nowExecutingPlayer.ifPresent(p -> {
-      int nowTotalScore = treasureHuntCommand.getTotalScore(p.getTreasure(), p.getGameScheduler());
+      int nowTotalScore = treasureHuntCommand.getTotalScore(p);
       int nowGameScore = treasureHuntCommand.getGameScore(p.getGameScheduler());
-      int nowBonusScore = treasureHuntCommand.getBonusScore(p.getTreasure());
+      int nowBonusScore = p.getBonusScore();
       int nowGameTime = p.getGameScheduler().getGameTime();
 
       player.sendMessage("現在の取得可能スコアは" + nowTotalScore + "点です。\n"
