@@ -31,7 +31,7 @@ public class GameScheduler extends BukkitRunnable {
     this.main = main;
     this.player = player;
 
-    initGameTime = main.getConfig().getInt("Game.initGameTime");
+    initGameTime = main.getConfig().getInt("game.initGameTime");
     gameTime = initGameTime;
 
     bossBar = Bukkit.createBossBar("Countdown", BarColor.GREEN, BarStyle.SOLID);
@@ -45,7 +45,7 @@ public class GameScheduler extends BukkitRunnable {
       bossBar.removeAll();
 
       player.sendTitle("残念！時間切れです", "", 0, 60, 10);
-      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("Messages.endGame")));
+      player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
       return;
     } else if (gameTime <= 10) {
       player.sendTitle(String.valueOf(gameTime), "", 0, 20, 5);
