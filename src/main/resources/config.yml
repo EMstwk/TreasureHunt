@@ -6,27 +6,69 @@ game:
   initGameTime: 60
 
 
-# 宝探しゲーム対象マテリアルの日本語表記一覧です。
-# 対象マテリアルを【追加】した場合は、この一覧にもマテリアル名と日本語表記を追加してください。
-# 対象マテリアルを【削除】した場合は、スコア一覧等でnullになるのを避けるため、既存のデータは削除しないでください。
-material:
-  DIRT: '土'
-  SAND: '砂'
-  OAK_LOG: 'オークの原木'
-  DARK_OAK_LOG: 'ダークオークの原木'
-  PUMPKIN: 'カボチャ'
-  DANDELION: 'タンポポ'
-  WHITE_WOOL: '白色の羊毛'
-  BEEF: '生の牛肉'
-  PORKCHOP: '生の豚肉'
-  BONE: '骨'
-  INK_SAC: 'イカスミ'
-  LILY_OF_THE_VALLEY: 'スズラン'
-  LAPIS_LAZULI: 'ラピスラズリ'
-  RAW_GOLD: '金の原石'
-  EMERALD: 'エメラルド'
-  DIAMOND: 'ダイヤモンド'
-  ENDER_PEARL: 'エンダーパール'
-  ANCIENT_DEBRIS: '古代の残骸'
-  WITHER_ROSE: 'ウィザーローズ'
+# 宝探しゲームの対象マテリアル一覧です。難易度ごとに、マテリアル、ボーナススコア、日本語名の情報をセットで設定しています。
+# （ボーナススコアは0+10段階（easy:0~2、normal:3~6、hard:7~10）で設定しています。）
+# 対象マテリアルを【削除】する場合は、スコア一覧等でのnull発生を避けるため、既存データはunusedに移してください。
 
+treasures:
+  easy:
+    - material: PUMPKIN
+      bonusScore: 0
+      jpName: 'カボチャ'
+    - material: DANDELION
+      bonusScore: 0
+      jpName: 'タンポポ'
+    - material: WHITE_WOOL
+      bonusScore: 1
+      jpName: '白色の羊毛'
+    - material: BEEF
+      bonusScore: 2
+      jpName: '生の牛肉'
+    - material: PORKCHOP
+      bonusScore: 2
+      jpName: '生の豚肉'
+
+  normal:
+    - material: BONE
+      bonusScore: 3
+      jpName: '骨'
+    - material: INK_SAC
+      bonusScore: 3
+      jpName: 'イカスミ'
+    - material: LILY_OF_THE_VALLEY
+      bonusScore: 4
+      jpName: 'スズラン'
+    - material: LAPIS_LAZULI
+      bonusScore: 5
+      jpName: 'ラピスラズリ'
+    - material: RAW_GOLD
+      bonusScore: 6
+      jpName: '金の原石'
+
+  hard:
+    - material: EMERALD
+      bonusScore: 7
+      jpName: 'エメラルド'
+    - material: DIAMOND
+      bonusScore: 8
+      jpName: 'ダイヤモンド'
+    - material: ENDER_PEARL
+      bonusScore: 9
+      jpName: 'エンダーパール'
+    - material: ANCIENT_DEBRIS
+      bonusScore: 9
+      jpName: '古代の残骸'
+    - material: WITHER_ROSE
+      bonusScore: 10
+      jpName: 'ウィザーローズ'
+
+  unused:
+    - material: DIRT
+      bonusScore: 0
+      jpName: '土'
+    - material: SAND
+      bonusScore: 0
+      jpName: '砂'
+    - material: OAK_LOG
+      bonusScore: 0
+      jpName: 'オークの原木'
