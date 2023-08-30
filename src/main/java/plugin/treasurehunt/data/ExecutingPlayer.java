@@ -18,6 +18,7 @@ public class ExecutingPlayer {
   private String difficulty;
   private Material treasure;
   private int bonusScore;
+  private String jpTreasureName;
 
   private Countdown countdown;
   private GameScheduler gameScheduler;

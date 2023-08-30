@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.bukkit.Material;
 
 /**
  * プレイヤーのスコア情報を扱うオブジェクトです。 DBに存在するテーブルと連動します。
@@ -18,13 +17,13 @@ public class PlayerScore {
   private String playerName;
   private int score;
   private String difficulty;
-  private Material treasure;
+  private String jpTreasureName;
   private LocalDateTime registeredAt;
 
-  public PlayerScore(String playerName, int score, String difficulty, Material treasure) {
+  public PlayerScore(String playerName, int score, String difficulty, String jpTreasureName) {
     this.playerName = playerName;
     this.score = score;
     this.difficulty = difficulty;
-    this.treasure = treasure;
+    this.jpTreasureName = jpTreasureName;
   }
 }
