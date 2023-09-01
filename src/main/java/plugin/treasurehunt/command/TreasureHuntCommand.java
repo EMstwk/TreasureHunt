@@ -25,8 +25,8 @@ import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
 /**
- * 制限時間内にランダムで指定されるマテリアルを入手しスコアを獲得する、宝探しゲームを起動するコマンドです。
- * スコアはブロックの種類、入手までにかかった時間によって変動します。
+ * ランダムで指定されるマテリアルを制限時間内に入手し、スコアを獲得する【宝探しゲーム】を起動するコマンドです。
+ * スコアはマテリアルの種類、入手までにかかった時間によって変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
 
@@ -75,7 +75,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * 現在登録されているスコアの一覧をメッセージに送ります。
+   * 現在登録されているスコアの一覧を、メッセージに表示します。
    *
    * @param player プレイヤー
    */
@@ -105,15 +105,15 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       return args[0];
     }
     player.sendMessage(
-        ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度指定が必要です。[easy, normal, hard]");
+        ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度の指定が必要です。[easy, normal, hard]");
     return NONE;
   }
 
   /**
-   * コマンド実行中のプレイヤー情報をリストで管理し、プレイヤーのスコア情報を取得します。
+   * コマンドを実行したプレイヤー情報をリストで管理し、現在実行しているプレイヤーのスコア情報等を取得します。
    *
    * @param player コマンドを実行したプレイヤー
-   * @return 現在実行しているプレイヤーのスコア情報
+   * @return 現在実行しているプレイヤーのスコア情報等
    */
   private ExecutingPlayer getExecutingPlayer(Player player) {
     ExecutingPlayer nowExecutingPlayer = new ExecutingPlayer(player.getName());
@@ -143,7 +143,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームを開始します。入手すべきマテリアルを指定し、スケジューラを実行します。
+   * ゲームを開始します。入手すべき対象マテリアルを指定し、ゲームのスケジューラを実行します。
    * コマンドを実行したプレイヤーが既に実行中のスケジューラがあれば、重複しないよう既存のものをキャンセルします。
    *
    * @param player             コマンドを実行したプレイヤー
@@ -170,6 +170,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           });
     }
 
+    // カウントダウン実行後にゲームを開始します。
     Countdown countdown = new Countdown(main, player);
     nowExecutingPlayer.setCountdown(countdown);
     countdown.setCompletionCallback(() -> {
@@ -182,23 +183,20 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           (initGameTime / 10) * Integer.parseInt(treasureMaterial.get("bonusScore").toString());
       String jpName = treasureMaterial.get("jpName").toString();
 
-      nowExecutingPlayer.setDifficulty(difficulty);
-      nowExecutingPlayer.setTreasure(treasure);
-      nowExecutingPlayer.setBonusScore(bonusScore);
-      nowExecutingPlayer.setJpTreasureName(jpName);
-
       GameScheduler gameScheduler = new GameScheduler(main, player);
-      nowExecutingPlayer.setGameScheduler(gameScheduler);
 
-      gameScheduler.startTask();
+      setExecutingPlayerData(difficulty, nowExecutingPlayer, treasure, bonusScore, jpName,
+          gameScheduler);
 
       int nowBonusScore = nowExecutingPlayer.getBonusScore();
       String nowJpTreasureName = nowExecutingPlayer.getJpTreasureName();
 
+      gameScheduler.startTask();
+
       player.sendTitle(
           "【" + ChatColor.AQUA + nowJpTreasureName + ChatColor.RESET + "】",
           ChatColor.BOLD + "(ボーナススコア：" + ChatColor.AQUA + nowBonusScore
-              + ChatColor.RESET + "" + ChatColor.BOLD + "点）を探そう！",
+              + ChatColor.RESET + ChatColor.BOLD + "点）を探そう！",
           0, 70, 30);
 
       // スコア確認コマンドを実行しなくても対象マテリアル等が確認できるよう、タイトルと合わせメッセージも送信します。
@@ -242,27 +240,27 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
+   * ゲームを実行中のプレイヤーの、対象マテリアル情報等を個別に保存します。
    *
-   * @return ゲームスコア
+   * @param difficulty         難易度
+   * @param nowExecutingPlayer 現在実行中のプレイヤー
+   * @param treasure           対象マテリアル
+   * @param bonusScore         ボーナススコア
+   * @param jpName             対象マテリアルの日本語名
+   * @param gameScheduler      ゲームスケジューラ
    */
-  int getGameScore(GameScheduler gameScheduler) {
-    int remainingTime = gameScheduler.getGameTime();
-    return (remainingTime / 30) * 30 + 30;
-  }
-
-  /**
-   * ボーナススコアとゲームスコアを合算し、合計スコアを返します。
-   *
-   * @return 合計スコア
-   */
-  int getTotalScore(ExecutingPlayer executingPlayer) {
-    return executingPlayer.getBonusScore() + getGameScore(executingPlayer.getGameScheduler());
+  private static void setExecutingPlayerData(String difficulty, ExecutingPlayer nowExecutingPlayer,
+      Material treasure, int bonusScore, String jpName, GameScheduler gameScheduler) {
+    nowExecutingPlayer.setDifficulty(difficulty);
+    nowExecutingPlayer.setTreasure(treasure);
+    nowExecutingPlayer.setBonusScore(bonusScore);
+    nowExecutingPlayer.setJpTreasureName(jpName);
+    nowExecutingPlayer.setGameScheduler(gameScheduler);
   }
 
   /**
    * プレイヤーがゲームの対象マテリアルを入手した場合、実行中のゲームを終了し、合計スコアを表示します。
-   * プレイヤー名、スコア等の情報は、DBに記録します。
+   * プレイヤー名、スコア等の情報はDBに記録します。
    *
    * @param e エンティティがアイテムを入手するイベント
    */
@@ -287,16 +285,17 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         nowGameScheduler.getBossBar().removeAll();
 
         int totalScore = getTotalScore(p);
-        p.setScore(totalScore);
 
         player.sendTitle(p.getJpTreasureName() + " を発見！",
             player.getName() + "の合計スコアは【" + ChatColor.AQUA + totalScore
                 + ChatColor.RESET + "点】です！", 0, 60, 10);
-        // ゲーム開始時にメッセージを送信しているので、履歴がおかしくならないよう終了時にもメッセージを送信します。
-        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame")));
+
+        // ゲーム開始時もメッセージを送信しているので、履歴がおかしくならないよう終了時にもメッセージを送信します。
+        player.sendMessage(Objects.requireNonNull(main.getConfig().getString("messages.endGame"))
+            + "（合計スコア：" + totalScore + "点）");
 
         playerScoreDao.insert(
-            new PlayerScore(p.getPlayerName(), p.getScore(), p.getDifficulty(),
+            new PlayerScore(p.getPlayerName(), totalScore, p.getDifficulty(),
                 p.getJpTreasureName()));
 
         executingPlayerList.remove(p);
@@ -305,7 +304,26 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * 他クラスからでも、executingPlayerListの情報を取得します。
+   * ゲームの経過時間により、獲得できるゲームスコアを設定します。
+   *
+   * @return ゲームスコア
+   */
+  int getGameScore(GameScheduler gameScheduler) {
+    int remainingTime = gameScheduler.getGameTime();
+    return (remainingTime / 30) * 30 + 30;
+  }
+
+  /**
+   * ボーナススコアとゲームスコアを合算し、合計スコアを返します。
+   *
+   * @return 合計スコア
+   */
+  int getTotalScore(ExecutingPlayer executingPlayer) {
+    return executingPlayer.getBonusScore() + getGameScore(executingPlayer.getGameScheduler());
+  }
+
+  /**
+   * 他クラスからでも、executingPlayerListの情報を取得できるようにします。
    *
    * @return executingPlayerList
    */

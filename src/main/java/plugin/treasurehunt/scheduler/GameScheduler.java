@@ -13,19 +13,19 @@ import plugin.treasurehunt.Main;
 
 /**
  * ゲームの制限時間を管理するスケジューラです。
- * ボスバーで残り時間を常時表示します。1分単位と残り10秒では、残り時間をタイトル表示もします。
+ * ボスバーで残り時間を常時表示します。1分単位と残り10秒では、残り時間をタイトル表示します。
  */
 @Getter
 @Setter
 public class GameScheduler extends BukkitRunnable {
 
+  private final Main main;
+  private Player player;
+
   private int initGameTime;
   private int gameTime;
   private BossBar bossBar;
   private Double progress = 1.0;
-
-  private final Main main;
-  private Player player;
 
   public GameScheduler(Main main, Player player) {
     this.main = main;

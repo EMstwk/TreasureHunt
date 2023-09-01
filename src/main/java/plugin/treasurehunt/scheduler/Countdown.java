@@ -15,11 +15,11 @@ import plugin.treasurehunt.Main;
 @Setter
 public class Countdown extends BukkitRunnable {
 
-  private int remainingTime;
-  private Runnable completionCallback;
-
   private final Main main;
   private Player player;
+
+  private Runnable completionCallback;
+  private int remainingTime;
 
   public Countdown(Main main, Player player) {
     this.main = main;
@@ -36,6 +36,7 @@ public class Countdown extends BukkitRunnable {
       cancel();
       if (completionCallback != null) {
         // カウントダウン終了時にコールバックを実行します。
+        // 万一nullが発生した場合にカウントダウンが実行され続けないよう、ifをネストさせています。
         completionCallback.run();
       }
       return;
