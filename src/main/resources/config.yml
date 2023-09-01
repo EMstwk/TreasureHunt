@@ -3,7 +3,7 @@ messages:
   ineligibleCommand: 'このコマンドは宝探しゲーム実行中のみ使用できます。'
 
 game:
-  initGameTime: 60
+  initGameTime: 300
 
 
 # 宝探しゲームの対象マテリアル一覧です。難易度ごとに、マテリアル、ボーナススコア、日本語名の情報をセットで設定しています。
