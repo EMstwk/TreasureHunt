@@ -23,7 +23,7 @@ Javaの学習用に初学者が作成しています。
 
 **※画面酔いにご注意ください。**
 
-https://github.com/EMstwk/TreasureHunt/assets/134411910/0ef5b6d6-f9c1-49a0-9ea6-a4c3634a774c
+https://github.com/EMstwk/TreasureHunt/assets/134411910/757ffc53-d5a8-4a90-ad0b-98ea1ecc0e6a
 
 
 # 対応バージョン
