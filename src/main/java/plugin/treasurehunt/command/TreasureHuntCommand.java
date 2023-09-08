@@ -324,6 +324,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   /**
    * 他クラスからでも、executingPlayerListの情報を取得できるようにします。
+   * （※IntelliJを2023.2.1にアップデートした際lombokのプラグインが必要となり、その結果当メソッドは不要となりましたが、
+   * 　念の為プラグインの無い環境でも動くようそのまま残しています。）
    *
    * @return executingPlayerList
    */
