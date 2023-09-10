@@ -1,6 +1,6 @@
 messages:
   endGame: '宝探しゲームを終了しました。'
-  ineligibleCommand: 'このコマンドは宝探しゲーム実行中のみ使用できます。'
+  invalidCommand: 'このコマンドは宝探しゲーム実行中のみ使用できます。'
 
 game:
   initGameTime: 300
