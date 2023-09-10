@@ -29,7 +29,6 @@ import plugin.treasurehunt.scheduler.GameScheduler;
  * スコアはマテリアルの種類、入手までにかかった時間によって変動します。
  * 結果はプレイヤー名、点数、日時などで保存されます。
  */
-
 public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   public static final String EASY = "easy";

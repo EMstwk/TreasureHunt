@@ -32,13 +32,13 @@ public class HuntEndCommand extends BaseCommand {
     List<ExecutingPlayer> executingPlayerList = treasureHuntCommand.getExecutingPlayerList();
 
     // コマンドを実行したプレイヤーが、カウントダウンか宝探しゲームを実行中であればtrueを返します。
-    boolean isExecutingPlayer = executingPlayerList.stream()
+    boolean isPlaying = executingPlayerList.stream()
         .filter(p -> p.getPlayerName().equals(player.getName()))
         .anyMatch(p -> ((p.getCountdown() != null && !p.getCountdown().isCancelled())
             || (p.getGameScheduler() != null && !p.getGameScheduler().isCancelled())));
 
-    if (executingPlayerList.isEmpty() || !isExecutingPlayer) {
-      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.ineligibleCommand"));
+    if (executingPlayerList.isEmpty() || !isPlaying) {
+      player.sendMessage(ChatColor.RED + main.getConfig().getString("messages.invalidCommand"));
       return false;
     }
 
