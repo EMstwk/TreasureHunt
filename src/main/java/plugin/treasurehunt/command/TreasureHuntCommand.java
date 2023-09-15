@@ -151,7 +151,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    */
   private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
     // コマンド実行者が実行中のカウントダウンがあればキャンセルします。
-    if (!Objects.isNull(nowExecutingPlayer.getCountdown())) {
+    if (Objects.nonNull(nowExecutingPlayer.getCountdown())) {
       executingPlayerList.stream()
           .filter(p -> p.getPlayerName().equals(player.getName()))
           .findFirst()
@@ -159,7 +159,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
 
     // コマンド実行者が実行中のゲームスケジューラがあればキャンセルします。
-    if (!Objects.isNull(nowExecutingPlayer.getGameScheduler())) {
+    if (Objects.nonNull(nowExecutingPlayer.getGameScheduler())) {
       executingPlayerList.stream()
           .filter(p -> p.getPlayerName().equals(player.getName()))
           .findFirst()
