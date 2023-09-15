@@ -31,10 +31,6 @@ import plugin.treasurehunt.scheduler.GameScheduler;
  */
 public class TreasureHuntCommand extends BaseCommand implements Listener {
 
-  public static final String EASY = "easy";
-  public static final String NORMAL = "normal";
-  public static final String HARD = "hard";
-  public static final String NONE = "none";
   public static final String LIST = "list";
 
   private final Main main;
@@ -56,7 +52,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
 
     String difficulty = getDifficulty(player, args);
-    if (difficulty.equals(NONE)) {
+    if (difficulty.equals(Difficulty.NONE.name())) {
       return false;
     }
 
@@ -99,13 +95,15 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @return 難易度
    */
   private String getDifficulty(Player player, String[] args) {
-    if (args.length == 1 && (EASY.equals(args[0]) || NORMAL.equals(args[0]) || HARD.equals(
-        args[0]))) {
+    if (args.length == 1
+        && (Difficulty.EASY.name().toLowerCase().equals(args[0])
+        || Difficulty.NORMAL.name().toLowerCase().equals(args[0])
+        || Difficulty.HARD.name().toLowerCase().equals(args[0]))) {
       return args[0];
     }
     player.sendMessage(
         ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度の指定が必要です。[easy, normal, hard]");
-    return NONE;
+    return Difficulty.NONE.name();
   }
 
   /**
@@ -231,7 +229,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @return 対象マテリアル情報
    */
   private Map<?, ?> getTreasureMaterial(String difficulty) {
-    List<Map<?, ?>> treasureMaterialList = switch (difficulty) {
+    Difficulty enumDifficulty = Difficulty.valueOf(difficulty.toUpperCase());
+    List<Map<?, ?>> treasureMaterialList = switch (enumDifficulty) {
       case NORMAL -> new TreasureMaterials(main).getNormalTreasureList();
       case HARD -> new TreasureMaterials(main).getHardTreasureList();
       default -> new TreasureMaterials(main).getEasyTreasureList();
