@@ -199,10 +199,13 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
           0, 70, 30);
 
       // スコア確認コマンドを実行しなくても対象マテリアル等が確認できるよう、タイトルと合わせメッセージも送信します。
-      player.sendMessage(
-          "宝探しを開始しました！\n" + "【" + ChatColor.AQUA + nowJpTreasureName
-              + ChatColor.RESET + "(ボーナススコア：" + ChatColor.AQUA + nowBonusScore
-              + ChatColor.RESET + "点)】を探しましょう！");
+      String message = """
+          宝探しを開始しました！
+          【%s%s%s(ボーナススコア：%s%d%s点)】を探しましょう！
+          """.formatted(ChatColor.AQUA, nowJpTreasureName, ChatColor.RESET,
+          ChatColor.AQUA, nowBonusScore, ChatColor.RESET);
+      player.sendMessage(message);
+
     });
     countdown.startCountdown();
   }

@@ -50,9 +50,12 @@ public class HuntStatusCommand extends BaseCommand implements Listener {
       int nowBonusScore = p.getBonusScore();
       int nowGameTime = p.getGameScheduler().getGameTime();
 
-      player.sendMessage("現在の取得可能スコアは" + nowTotalScore + "点です。\n"
-          + ChatColor.GRAY + "(残り時間" + nowGameTime / 60 + "分" + nowGameTime % 60 + "秒："
-          + nowGameScore + "点、ボーナススコア：" + nowBonusScore + "点)");
+      String message = """
+          現在の取得可能スコアは%d点です。
+          %s（残り時間%d分%d秒：%d点、ボーナススコア：%d点）
+          """.formatted(nowTotalScore,
+          ChatColor.GRAY, nowGameTime / 60, nowGameTime % 60, nowGameScore, nowBonusScore);
+      player.sendMessage(message);
     });
     return false;
   }
