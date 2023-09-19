@@ -2,8 +2,8 @@ package plugin.treasurehunt.command;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SplittableRandom;
@@ -19,7 +19,8 @@ import org.bukkit.potion.PotionEffect;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.PlayerScoreDao;
 import plugin.treasurehunt.data.ExecutingPlayer;
-import plugin.treasurehunt.data.TreasureMaterials;
+import plugin.treasurehunt.data.Treasure;
+import plugin.treasurehunt.data.TreasureLists;
 import plugin.treasurehunt.mapper.data.PlayerScore;
 import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
@@ -51,8 +52,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
       return false;
     }
 
-    String difficulty = getDifficulty(player, args);
-    if (difficulty.equals(Difficulty.NONE.name())) {
+    Difficulty difficulty = getDifficulty(player, args);
+    if (difficulty.equals(Difficulty.NONE)) {
       return false;
     }
 
@@ -94,16 +95,22 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param args   コマンド引数
    * @return 難易度
    */
-  private String getDifficulty(Player player, String[] args) {
+  private Difficulty getDifficulty(Player player, String[] args) {
+    String firstArgs = args[0].toUpperCase();
     if (args.length == 1
-        && (Difficulty.EASY.name().toLowerCase().equals(args[0])
-        || Difficulty.NORMAL.name().toLowerCase().equals(args[0])
-        || Difficulty.HARD.name().toLowerCase().equals(args[0]))) {
-      return args[0];
+        && (Difficulty.EASY.name().equals(firstArgs)
+        || Difficulty.NORMAL.name().equals(firstArgs)
+        || Difficulty.HARD.name().equals(firstArgs))) {
+
+      return Arrays.stream(Difficulty.values())
+          .filter(d -> d.name().equals(firstArgs))
+          .findFirst()
+          .orElse(Difficulty.NONE);
     }
+
     player.sendMessage(
         ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度の指定が必要です。[easy, normal, hard]");
-    return Difficulty.NONE.name();
+    return Difficulty.NONE;
   }
 
   /**
@@ -147,7 +154,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param difficulty         難易度
    * @param nowExecutingPlayer 現在実行中のプレイヤー情報
    */
-  private void startGame(Player player, String difficulty, ExecutingPlayer nowExecutingPlayer) {
+  private void startGame(Player player, Difficulty difficulty, ExecutingPlayer nowExecutingPlayer) {
     // コマンド実行者が実行中のカウントダウンがあればキャンセルします。
     if (Objects.nonNull(nowExecutingPlayer.getCountdown())) {
       executingPlayerList.stream()
@@ -173,16 +180,16 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     countdown.setCompletionCallback(() -> {
       initPlayerStatus(player);
 
-      Map<?, ?> treasureMaterial = getTreasureMaterial(difficulty);
-      Material treasure = Material.getMaterial(String.valueOf(treasureMaterial.get("material")));
+      Treasure treasureData = getTreasureData(difficulty);
+      Material treasureMaterial = treasureData.getTreasureMaterial();
       int initGameTime = main.getConfig().getInt("game.initGameTime");
       int bonusScore =
-          (initGameTime / 10) * Integer.parseInt(treasureMaterial.get("bonusScore").toString());
-      String jpName = treasureMaterial.get("jpName").toString();
+          (initGameTime / 10) * treasureData.getBonusScore();
+      String jpName = treasureData.getJpName();
 
       GameScheduler gameScheduler = new GameScheduler(main, player);
 
-      setExecutingPlayerData(difficulty, nowExecutingPlayer, treasure, bonusScore, jpName,
+      setExecutingPlayerData(difficulty, nowExecutingPlayer, treasureMaterial, bonusScore, jpName,
           gameScheduler);
 
       int nowBonusScore = nowExecutingPlayer.getBonusScore();
@@ -228,12 +235,11 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param difficulty 難易度
    * @return 対象マテリアル情報
    */
-  private Map<?, ?> getTreasureMaterial(String difficulty) {
-    Difficulty enumDifficulty = Difficulty.valueOf(difficulty.toUpperCase());
-    List<Map<?, ?>> treasureMaterialList = switch (enumDifficulty) {
-      case NORMAL -> new TreasureMaterials(main).getNormalTreasureList();
-      case HARD -> new TreasureMaterials(main).getHardTreasureList();
-      default -> new TreasureMaterials(main).getEasyTreasureList();
+  private Treasure getTreasureData(Difficulty difficulty) {
+    List<Treasure> treasureMaterialList = switch (difficulty) {
+      case NORMAL -> new TreasureLists().getNormalTreasureList();
+      case HARD -> new TreasureLists().getHardTreasureList();
+      default -> new TreasureLists().getEasyTreasureList();
     };
 
     int random = new SplittableRandom().nextInt(treasureMaterialList.size());
@@ -245,15 +251,15 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    *
    * @param difficulty         難易度
    * @param nowExecutingPlayer 現在実行中のプレイヤー
-   * @param treasure           対象マテリアル
+   * @param treasureMaterial   対象マテリアル
    * @param bonusScore         ボーナススコア
    * @param jpName             対象マテリアルの日本語名
    * @param gameScheduler      ゲームスケジューラ
    */
-  private static void setExecutingPlayerData(String difficulty, ExecutingPlayer nowExecutingPlayer,
-      Material treasure, int bonusScore, String jpName, GameScheduler gameScheduler) {
+  private static void setExecutingPlayerData(Difficulty difficulty, ExecutingPlayer nowExecutingPlayer,
+      Material treasureMaterial, int bonusScore, String jpName, GameScheduler gameScheduler) {
     nowExecutingPlayer.setDifficulty(difficulty);
-    nowExecutingPlayer.setTreasure(treasure);
+    nowExecutingPlayer.setTreasureMaterial(treasureMaterial);
     nowExecutingPlayer.setBonusScore(bonusScore);
     nowExecutingPlayer.setJpTreasureName(jpName);
     nowExecutingPlayer.setGameScheduler(gameScheduler);
@@ -278,7 +284,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
         .findFirst();
 
     nowExecutingPlayer.ifPresent(p -> {
-      Material nowTreasure = p.getTreasure();
+      Material nowTreasure = p.getTreasureMaterial();
       GameScheduler nowGameScheduler = p.getGameScheduler();
 
       if (nowTreasure.equals(foundMaterial) && !nowGameScheduler.isCancelled()) {
@@ -296,7 +302,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
             + "（合計スコア：" + totalScore + "点）");
 
         playerScoreDao.insert(
-            new PlayerScore(p.getPlayerName(), totalScore, p.getDifficulty(),
+            new PlayerScore(p.getPlayerName(), totalScore, p.getDifficulty().name().toLowerCase(),
                 p.getJpTreasureName()));
 
         executingPlayerList.remove(p);
