@@ -3,6 +3,7 @@ package plugin.treasurehunt.data;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Material;
+import plugin.treasurehunt.command.Difficulty;
 import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
 
@@ -14,8 +15,8 @@ import plugin.treasurehunt.scheduler.GameScheduler;
 public class ExecutingPlayer {
 
   private String playerName;
-  private String difficulty;
-  private Material treasure;
+  private Difficulty difficulty;
+  private Material treasureMaterial;
   private int bonusScore;
   private String jpTreasureName;
 
