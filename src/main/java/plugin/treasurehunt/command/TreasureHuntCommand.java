@@ -1,12 +1,5 @@
 package plugin.treasurehunt.command;
 
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.SplittableRandom;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -18,12 +11,20 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.potion.PotionEffect;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.PlayerScoreDao;
+import plugin.treasurehunt.config.MaterialConfig;
 import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.data.Treasure;
-import plugin.treasurehunt.data.TreasureLists;
 import plugin.treasurehunt.mapper.data.PlayerScore;
 import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
+
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.SplittableRandom;
 
 /**
  * ランダムで指定されるマテリアルを制限時間内に入手し、スコアを獲得する【宝探しゲーム】を起動するコマンドです。
@@ -33,6 +34,8 @@ import plugin.treasurehunt.scheduler.GameScheduler;
 public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   public static final String LIST = "list";
+
+  private static final MaterialConfig config = MaterialConfig.getInstance();
 
   private final Main main;
   private final PlayerScoreDao playerScoreDao = new PlayerScoreDao();
@@ -44,8 +47,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   @Override
-  public boolean onExecutePlayerCommand(Player player, Command command, String label,
-      String[] args) {
+  public boolean onExecutePlayerCommand(Player player, Command command, String label, String[] args) {
     // 最初の引数が「list」の場合、スコアを一覧表示して処理を終了します。
     if (args.length == 1 && LIST.equals(args[0])) {
       sendPlayerScoreList(player);
@@ -65,8 +67,7 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
   }
 
   @Override
-  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
-      String[] args) {
+  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label, String[] args) {
     return false;
   }
 
@@ -237,9 +238,9 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    */
   private Treasure getTreasureData(Difficulty difficulty) {
     List<Treasure> treasureMaterialList = switch (difficulty) {
-      case NORMAL -> new TreasureLists().getNormalTreasureList();
-      case HARD -> new TreasureLists().getHardTreasureList();
-      default -> new TreasureLists().getEasyTreasureList();
+      case NORMAL -> config.getNormalTreasureList();
+      case HARD -> config.getHardTreasureList();
+      default -> config.getEasyTreasureList();
     };
 
     int random = new SplittableRandom().nextInt(treasureMaterialList.size());
