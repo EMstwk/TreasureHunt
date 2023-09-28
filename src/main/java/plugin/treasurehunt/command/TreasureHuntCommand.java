@@ -18,9 +18,9 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.potion.PotionEffect;
 import plugin.treasurehunt.Main;
 import plugin.treasurehunt.PlayerScoreDao;
+import plugin.treasurehunt.config.MaterialConfig;
 import plugin.treasurehunt.data.ExecutingPlayer;
 import plugin.treasurehunt.data.Treasure;
-import plugin.treasurehunt.data.TreasureLists;
 import plugin.treasurehunt.mapper.data.PlayerScore;
 import plugin.treasurehunt.scheduler.Countdown;
 import plugin.treasurehunt.scheduler.GameScheduler;
@@ -33,6 +33,8 @@ import plugin.treasurehunt.scheduler.GameScheduler;
 public class TreasureHuntCommand extends BaseCommand implements Listener {
 
   public static final String LIST = "list";
+
+  private static final MaterialConfig config = MaterialConfig.getInstance();
 
   private final Main main;
   private final PlayerScoreDao playerScoreDao = new PlayerScoreDao();
@@ -109,7 +111,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
     }
 
     player.sendMessage(
-        ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度の指定が必要です。[easy, normal, hard]");
+        ChatColor.RED
+            + "実行できません。コマンド引数の1つ目に難易度の指定が必要です。[easy, normal, hard]");
     return Difficulty.NONE;
   }
 
@@ -237,9 +240,9 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    */
   private Treasure getTreasureData(Difficulty difficulty) {
     List<Treasure> treasureMaterialList = switch (difficulty) {
-      case NORMAL -> new TreasureLists().getNormalTreasureList();
-      case HARD -> new TreasureLists().getHardTreasureList();
-      default -> new TreasureLists().getEasyTreasureList();
+      case NORMAL -> config.getNormalTreasureList();
+      case HARD -> config.getHardTreasureList();
+      default -> config.getEasyTreasureList();
     };
 
     int random = new SplittableRandom().nextInt(treasureMaterialList.size());
@@ -256,7 +259,8 @@ public class TreasureHuntCommand extends BaseCommand implements Listener {
    * @param jpName             対象マテリアルの日本語名
    * @param gameScheduler      ゲームスケジューラ
    */
-  private static void setExecutingPlayerData(Difficulty difficulty, ExecutingPlayer nowExecutingPlayer,
+  private static void setExecutingPlayerData(Difficulty difficulty,
+      ExecutingPlayer nowExecutingPlayer,
       Material treasureMaterial, int bonusScore, String jpName, GameScheduler gameScheduler) {
     nowExecutingPlayer.setDifficulty(difficulty);
     nowExecutingPlayer.setTreasureMaterial(treasureMaterial);
