@@ -7,7 +7,7 @@ game:
 
 # 宝探しゲームの対象マテリアル一覧です。難易度ごとに、マテリアル、ボーナススコア、日本語名の情報をセットで設定しています。
 # （ボーナススコアは0+10段階（easy:0~2、normal:3~6、hard:7~10）で設定しています。）
-# 対象の変更により【削除】した既存のマテリアル情報は、念の為"unused"に移しています。
+# 対象の変更により【削除】した既存のマテリアル情報は、念の為"unusedTreasures"に移しています。
 treasures:
   easy:
     - material: PUMPKIN
@@ -60,6 +60,8 @@ treasures:
       bonusScore: 10
       jpName: 'ウィザーローズ'
 
+# 対象の変更で不要になったマテリアル情報です。
+unusedTreasures:
   unused:
     - material: DIRT
       bonusScore: 0
